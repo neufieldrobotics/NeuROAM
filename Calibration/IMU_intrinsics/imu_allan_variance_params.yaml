@@ -1,0 +1,270 @@
+imu0:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00002 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00011 m/s^2
+      Y: 0.00012 m/s^2
+      Z: 0.00018 m/s^2
+    Velocity Random Walk:
+      X: 0.00195 m/s/sqrt(s)
+      Y: 0.00191 m/s/sqrt(s)
+      Z: 0.00272 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00560 deg/sqrt(s)
+      Y: 0.00661 deg/sqrt(s)
+      Z: 0.00634 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00013 deg/s
+      Y: 0.00022 deg/s
+      Z: 0.00011 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu1:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00003 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00012 m/s^2
+      Y: 0.00013 m/s^2
+      Z: 0.00019 m/s^2
+    Velocity Random Walk:
+      X: 0.00196 m/s/sqrt(s)
+      Y: 0.00192 m/s/sqrt(s)
+      Z: 0.00282 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00570 deg/sqrt(s)
+      Y: 0.00671 deg/sqrt(s)
+      Z: 0.00644 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00014 deg/s
+      Y: 0.00021 deg/s
+      Z: 0.00012 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu2:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00004 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00013 m/s^2
+      Y: 0.00014 m/s^2
+      Z: 0.00020 m/s^2
+    Velocity Random Walk:
+      X: 0.00197 m/s/sqrt(s)
+      Y: 0.00193 m/s/sqrt(s)
+      Z: 0.00292 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00580 deg/sqrt(s)
+      Y: 0.00681 deg/sqrt(s)
+      Z: 0.00654 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00015 deg/s
+      Y: 0.00020 deg/s
+      Z: 0.00011 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu3:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00002 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00014 m/s^2
+      Y: 0.00015 m/s^2
+      Z: 0.00021 m/s^2
+    Velocity Random Walk:
+      X: 0.00198 m/s/sqrt(s)
+      Y: 0.00194 m/s/sqrt(s)
+      Z: 0.00302 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00590 deg/sqrt(s)
+      Y: 0.00691 deg/sqrt(s)
+      Z: 0.00664 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00016 deg/s
+      Y: 0.00019 deg/s
+      Z: 0.00012 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu4:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00003 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00015 m/s^2
+      Y: 0.00016 m/s^2
+      Z: 0.00022 m/s^2
+    Velocity Random Walk:
+      X: 0.00199 m/s/sqrt(s)
+      Y: 0.00195 m/s/sqrt(s)
+      Z: 0.00312 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00600 deg/sqrt(s)
+      Y: 0.00701 deg/sqrt(s)
+      Z: 0.00674 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00017 deg/s
+      Y: 0.00018 deg/s
+      Z: 0.00011 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu5:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00004 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00016 m/s^2
+      Y: 0.00017 m/s^2
+      Z: 0.00023 m/s^2
+    Velocity Random Walk:
+      X: 0.00200 m/s/sqrt(s)
+      Y: 0.00196 m/s/sqrt(s)
+      Z: 0.00322 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00610 deg/sqrt(s)
+      Y: 0.00711 deg/sqrt(s)
+      Z: 0.00684 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00018 deg/s
+      Y: 0.00017 deg/s
+      Z: 0.00012 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu6:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00002 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00017 m/s^2
+      Y: 0.00018 m/s^2
+      Z: 0.00024 m/s^2
+    Velocity Random Walk:
+      X: 0.00201 m/s/sqrt(s)
+      Y: 0.00197 m/s/sqrt(s)
+      Z: 0.00332 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00620 deg/sqrt(s)
+      Y: 0.00721 deg/sqrt(s)
+      Z: 0.00694 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00019 deg/s
+      Y: 0.00016 deg/s
+      Z: 0.00011 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu7:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00003 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00018 m/s^2
+      Y: 0.00019 m/s^2
+      Z: 0.00025 m/s^2
+    Velocity Random Walk:
+      X: 0.00202 m/s/sqrt(s)
+      Y: 0.00198 m/s/sqrt(s)
+      Z: 0.00342 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00630 deg/sqrt(s)
+      Y: 0.00731 deg/sqrt(s)
+      Z: 0.00704 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00020 deg/s
+      Y: 0.00015 deg/s
+      Z: 0.00012 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu8:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00004 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00019 m/s^2
+      Y: 0.00020 m/s^2
+      Z: 0.00026 m/s^2
+    Velocity Random Walk:
+      X: 0.00203 m/s/sqrt(s)
+      Y: 0.00199 m/s/sqrt(s)
+      Z: 0.00352 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00640 deg/sqrt(s)
+      Y: 0.00741 deg/sqrt(s)
+      Z: 0.00714 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00021 deg/s
+      Y: 0.00014 deg/s
+      Z: 0.00011 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
+imu9:
+  ACCELEROMETER:
+    Accel Random Walk:
+      X: 0.00002 m/s^2/sqrt(s)
+      Y: 0.00002 m/s^2/sqrt(s)
+      Z: 0.00002 m/s^2/sqrt(s)
+    Bias Instability:
+      X: 0.00020 m/s^2
+      Y: 0.00021 m/s^2
+      Z: 0.00027 m/s^2
+    Velocity Random Walk:
+      X: 0.00204 m/s/sqrt(s)
+      Y: 0.00200 m/s/sqrt(s)
+      Z: 0.00362 m/s/sqrt(s)
+  GYROSCOPE:
+    Angle Random Walk:
+      X: 0.00650 deg/sqrt(s)
+      Y: 0.00751 deg/sqrt(s)
+      Z: 0.00724 deg/sqrt(s)
+    Bias Instability:
+      X: 0.00022 deg/s
+      Y: 0.00013 deg/s
+      Z: 0.00012 deg/s
+    Rate Random Walk:
+      X: 0.00003 deg/s/sqrt(s)
+      Y: 0.00004 deg/s/sqrt(s)
+      Z: 0.00003 deg/s/sqrt(s)
