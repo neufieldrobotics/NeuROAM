@@ -1,0 +1,7 @@
+*.bag
+lidracam_align/lidarcam_env
+lidracam_align/extracted_data
+lidracam_align/calibration_explorer
+lidracam_align/aligned_output
+lidracam_align/__pycache__
+lidracam_align/lidar_data.csv
