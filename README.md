@@ -21,6 +21,7 @@ This document outlines the steps to set up the ROS 2 Humble workspace containing
     sudo apt install python3-rosdep libudev-dev \
          libjsoncpp-dev libeigen3-dev libtins-dev libpcap-dev \
          flatbuffers-compiler libflatbuffers-dev libglfw3-dev \
+         python3-colcon-common-extensions python3-colcon-argcomplete \
          ros-humble-image-transport-plugins
     ```
 * **User Groups:**
