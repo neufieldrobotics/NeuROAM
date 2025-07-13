@@ -45,7 +45,7 @@ This document outlines the steps to set up the ROS 2 Humble workspace containing
    sudo rosdep init
    rosdep update
    rosdep install --from-paths src --ignore-src -r -y
-   colcon build --symlinnk-install # Takes about 10 minutes
+   colcon build --symlink-install # Takes about 10 minutes
    source install/setup.bash
    ```
 ## 3. Hardware Setup & Configuration
