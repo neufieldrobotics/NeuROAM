@@ -1,5 +1,5 @@
 [submodule "ublox"]
-	path = ublox
+	path = src/ublox
 	url = https://github.com/KumarRobotics/ublox.git
 	branch = ros2
 [submodule "src/flir_camera_driver"]

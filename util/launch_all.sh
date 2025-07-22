@@ -34,6 +34,8 @@ ros2 launch ublox_gps ublox_gps_node-launch.py &
 pid3=$!
 ros2 launch spinnaker_synchronized_camera_driver follower_example.launch.py  &
 pid4=$!
+ros2 launch doodle_monitor  doodle_monitor.launch.py 
+pid5=$!
 
 # Wait for all background processes
-wait $pid1 $pid2 $pid3 $pid4
+wait $zenoh_pid $pid1 $pid2 $pid3 $pid4 $pid5
