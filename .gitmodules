@@ -21,3 +21,6 @@
 [submodule "src/flir_camera_driver"]
 	path = src/flir_camera_driver
 	url = git@github.com:neufieldrobotics/flir_camera_driver.git
+[submodule "src/doodle-labs-interface"]
+	path = src/doodle-labs-interface
+	url = git@github.com:neufieldrobotics/doodle-labs-interface.git
