@@ -14,10 +14,6 @@
 	path = src/vectornav
 	url = https://github.com/dawonn/vectornav.git
 	branch = ros2
-[submodule "src/ouster-ros"]
-	path = src/ouster-ros
-	url = https://github.com/ouster-lidar/ouster-ros.git
-	branch = ros2
 [submodule "src/flir_camera_driver"]
 	path = src/flir_camera_driver
 	url = git@github.com:neufieldrobotics/flir_camera_driver.git
