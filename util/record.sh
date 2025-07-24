@@ -50,4 +50,17 @@ ros2 bag record -o full_capture_$(date +%Y-%m-%d-%H-%M-%S) -s mcap --max-bag-dur
   /cam_sync/cam0/camera_info \
   /cam_sync/cam1/meta \
   /cam_sync/cam1/image_raw \
-  /cam_sync/cam1/camera_info
+  /cam_sync/cam1/camera_info \
+  /doodle_monitor/activity \
+  /doodle_monitor/iperf_result \
+  /doodle_monitor/lna_status \
+  /doodle_monitor/mesh_status \
+  /doodle_monitor/noise \
+  /doodle_monitor/peer_list \
+  /doodle_monitor/ping_result \
+  /doodle_monitor/raw \
+  /doodle_monitor/sta_status \
+  /doodle_monitor/sys/cpu_load \
+  /doodle_monitor/sys/freemem \
+  /doodle_monitor/sys/localtime
+
