@@ -126,4 +126,5 @@ alias gp="git push"
 alias gd="git diff"
 alias gc="git commit"
 alias src="source ~/.bashrc"
+alias gpupdate="git add .; git commit -m 'small update'; git push;"
 
