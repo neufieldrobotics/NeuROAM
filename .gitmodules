@@ -15,3 +15,6 @@
 	path = src/vectornav
 	url = git@github.com:neufieldrobotics/vectornav.git
 	branch = ros2
+[submodule "src/system-health-monitor"]
+	path = src/system-health-monitor
+	url = git@github.com:neufieldrobotics/system-health-monitor.git
