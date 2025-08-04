@@ -76,7 +76,7 @@ included on all payloads.
 1. Check that the payload is securely attached to the robot.
 2. Check cables and connections: all cables should be securely connected and not damaged.
 3. Check batteries: both the payload and the robot should be fully charged.
-4. Camera lenses should be clean and unobstructed. The cap should be removed from the stereo cameras.
+4. Camera lenses should be clean and unobstructed. The cap should be removed from the stereo cameras. Do not wipe lenses with anything other than precision wipes.
 
 ## 2b. Hardware-Software Checks
 
@@ -84,8 +84,10 @@ included on all payloads.
    - The harddrive is probably under `/dev/sda1` or `/dev/nvme0n1p1`.
    - We want at least `1TB` of space under `Available` for the experiment.
    - If there is not enough space, please offload data from previous experiments to the storage server.
-2. TODO: chrony/ptp status
-3. Connectivity checks: try to ping every robot. You can use the script `utils/ping_robots.sh` to do this.
+2. Check that the GPS has a valid fix outdoors using `gpsmon`.
+3. Check that the Jetson is synced to GPS time via Chrony. `chronyc tracking` should indicate the time source as PPS. `chronyc sources` should also indicate a valid time source from PPS and GPS. `sudo ppstest` should timestamp the PPS rising edge at intervals extremely close to the top-of-second in system time (i.e. 0.9999s or 1.00001s)
+4. Check that the Ouster time is synchronized `curl -i -X DELETE http://192.0.2.123/api/v1/system/network/speed_override -H "Content-Type: application/json"`
+5. Connectivity checks: try to ping every robot. You can use the script `ping_robots.sh` to do this.
    - If a robot is not reachable, check the network connection and make sure the robot is powered on.
    - If you're looking for a specific robot, you can also independently use the `ping <ip_address>` command to check connectivity with a single robot. See the table below for the IP addresses of each payload.
 
@@ -174,6 +176,7 @@ Make sure that the calibration parameters are within the following ranges:
 6. TODO: visualize point clouds from lidar and stereo cameras to ensure that they are aligned
    - This can be done using RViz or Foxglove Studio.
    - Check that the point clouds are aligned and that there are no large gaps or misalignments.
+7. Verify camera instrinsic calibration reprojection error <3px
 
 ## 3d. (Before) Save calibration parameters
 
