@@ -34,4 +34,3 @@ for payload in "${payloads[@]}"; do
 
   echo
 done
-
