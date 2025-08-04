@@ -12,18 +12,37 @@ declare -A payload_ips=(
   ["payload4"]="10.19.30.104"
 )
 
-echo "🔌 Running connectivity check (timeout: 0.75s)..."
+# Optional: iperf duration (seconds)
+IPERF_DURATION=3
+
+echo "🔌 Running connectivity and bandwidth check..."
+echo "Ping timeout: 0.75s | iperf3 duration: ${IPERF_DURATION}s"
 echo
 
-# Loop over ordered payloads
 for payload in "${payloads[@]}"; do
   ip="${payload_ips[$payload]}"
-  output=$(ping -c 1 -W 1 "$ip" 2>/dev/null)
+  echo "🔎 Checking $payload ($ip)..."
 
+  # Ping
+  output=$(ping -c 1 -W 1 "$ip" 2>/dev/null)
   if echo "$output" | grep -q "1 received"; then
     rtt=$(echo "$output" | grep -oP 'time=\K[0-9.]+')
-    echo "✅ $payload ($ip) is reachable — RTT ${rtt} ms"
+    echo "  ✅ Ping OK — RTT: ${rtt} ms"
+
+    # iperf3
+    bw=$(iperf3 -c "$ip" -t $IPERF_DURATION -J 2>/dev/null \
+          | jq '.end.sum_received.bits_per_second // empty' \
+          | awk '{printf "%.2f Mbps\n", $1 / 1e6}')
+    if [ -n "$bw" ]; then
+      echo "  📶 Bandwidth: $bw"
+    else
+      echo "  ⚠️  iperf3 failed or timed out"
+    fi
+
   else
-    echo "❌ $payload ($ip) is unreachable"
+    echo "  ❌ Ping failed — host unreachable"
   fi
+
+  echo
 done
+
