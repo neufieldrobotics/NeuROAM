@@ -29,14 +29,16 @@ for payload in "${payloads[@]}"; do
     rtt=$(echo "$output" | grep -oP 'time=\K[0-9.]+')
     echo "  ✅ Ping OK — RTT: ${rtt} ms"
 
-    # iperf3
-    bw=$(iperf3 -c "$ip" -t $IPERF_DURATION -J 2>/dev/null \
-          | jq '.end.sum_received.bits_per_second // empty' \
-          | awk '{printf "%.2f Mbps\n", $1 / 1e6}')
-    if [ -n "$bw" ]; then
-      echo "  📶 Bandwidth: $bw"
-    else
-      echo "  ⚠️  iperf3 failed or timed out"
+    # Run iperf3 in JSON mode and store output
+    iperf_output=$(iperf3 -c "$ip" -t $IPERF_DURATION -J 2>/dev/null)
+
+    # Only proceed if output is non-empty and contains a bits_per_second field
+    if [[ -n "$iperf_output" ]] && echo "$iperf_output" | jq -e '.end.sum_received.bits_per_second or .end.sum.bits_per_second' >/dev/null 2>&1; then
+        bw_bps=$(echo "$iperf_output" | jq -r '.end.sum_received.bits_per_second // .end.sum.bits_per_second')
+        bw_mbps=$(awk "BEGIN {printf \"%.2f\", $bw_bps / 1e6}")
+        echo "  📶 Bandwidth: $bw_mbps Mbps"
+        else
+        echo "  ⚠️  iperf3 failed, timed out, or gave no usable bandwidth result"
     fi
 
   else
