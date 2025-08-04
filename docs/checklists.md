@@ -30,7 +30,8 @@ and check off the items as they are completed.
 - [3. (Before) Check calibration](#3-before-check-calibration)
   - [3a. (Before) Gather calibration data](#3a-before-gather-calibration-data)
   - [3b. (Before) Process calibration data](#3b-before-process-calibration-data)
-  - [3b. (Before) Check calibration data](#3b-before-check-calibration-data)
+  - [3c. (Before) Check calibrations](#3c-before-check-calibrations)
+  - [3d. (Before) Save calibration parameters](#3d-before-save-calibration-parameters)
 - [4. (During) Run the experiment](#4-during-run-the-experiment)
 - [5. (After) Offload the data](#5-after-offload-the-data)
 - [6. (After) Verify the data](#6-after-verify-the-data)
@@ -42,12 +43,23 @@ We should make sure that the payload is on the latest version of the software.
 This will make sure that any fixes or improvements that have been made are
 included on all payloads.
 
-1. `cd ~/NeuROAM`
-2. `git pull`
-3. `git submodule update --init --recursive`
-4. `colcon build --symlink-install`
-5. `source install/setup.bash`
-6.  TODO: Alan finish the rest of this. Run the sensors, make sure no crashes, check that all nodes
+1. Make sure the right payload is on the right robot. See below table for payloads and robots.
+
+| Payload Name | Robot Name    |
+| ------------ | ------------- |
+| payload0     | Spot          |
+| payload1     | Go2W          |
+| payload2     | Go2           |
+| payload3     | AgileX Scout  |
+| payload4     | AgileX Hunter |
+
+
+2. `cd ~/NeuROAM`
+3. `git pull`
+4. `git submodule update --init --recursive`
+5. `colcon build --symlink-install`
+6. `source install/setup.bash`
+7.  TODO: Alan finish the rest of this. Run the sensors, make sure no crashes, check that all nodes
    are running, etc.
 
 
@@ -76,31 +88,68 @@ included on all payloads.
 
 ## 3a. (Before) Gather calibration data
 
+TODO: Describe how to gather calibration data for each sensor.
 
 ## 3b. (Before) Process calibration data
 
+TODO: Describe how to process calibration data for each sensor.
 
-## 3b. (Before) Check calibration data
+## 3c. (Before) Check calibrations
+
+TODO: Finish the calibration checks
+
+This may get more sophisticated in the future. For now, we will check that the
+estimated calibration parameters are within a reasonable range. This will ensure
+that the calibration is not wildly off, but we should try to make this scheme a
+little more robust in the future.
+
+Make sure that the calibration parameters are within the following ranges:
+1. TODO LIDAR to IMU transformation:
+  - x: [-0.5, 0.5] m
+  - y: [-0.5, 0.5] m
+  - z: [-0.5, 0.5] m
+  - rotation:
+2. TODO Stereo camera to IMU transformation:
+  - x: [-0.5, 0.5] m
+  - y: [-0.5, 0.5] m
+  - z: [-0.5, 0.5] m
+  - rotation:
+3. TODO Stereo camera params:
+  - fx: [100, 1000] px
+  - fy: [100, 1000] px
+  - cx: [0, 1920] px
+  - cy: [0, 1080] px
+  - baseline: [0.05, 0.5] m
+4. TODO Vectornav IMU calibration:
+  - accelerometer bias: [-0.1, 0.1] m/s^2
+  - gyroscope bias: [-0.1, 0.1] rad/s
+5. TODO: timing offsets
+
+
+## 3d. (Before) Save calibration parameters
+
+TODO: where do we want to save the calibration data?
 
 # 4. (During) Run the experiment
 
-1. Go to starting position
-2. Open note-taking app - audio or text is fine. This will be used to take notes
+1. TODO: add logs steps (who is using which robot, data/time, other details?)
+2. Go to starting position
+3. Open note-taking app - audio or text is fine. This will be used to take notes
    during the experiment.
-3. TODO: Launch the recording script:
-4. Check that the bag being recorded is named correctly:
+4. TODO: Launch the recording script:
+5. Check that the bag being recorded is named correctly:
    - The bag should be named `<payload>_<date>_<time>.bag`, where `<payload>` is the name of the payload
      (e.g., "payload1"), `<date>` is the date of the experiment in YYYYMMDD format, and
      `<time>` is the time of the experiment start in HHMM format.
    - Example: `payload1_20231001_1200.bag` for a payload named "payload1"
      starting an experiment on October 1, 2023 at 12:00.
-5. Execute the experiment plan.
-6. Take notes during the experiment! Note the approximate time that each event occurs.
+6. Execute the experiment plan.
+7. Take notes during the experiment! Note the approximate time that each event occurs.
    1. Anytime entering or exiting a building or floor
    2. Anything else of note: going up/down stairs or elevators, encountering another robot, etc.
    3. Any unexpected events: crashes, sensor failures, etc.
-7. When the experiment is complete, stop the recording script.
-8. Make sure to save the notes from the experiment. Save your notes file in the format
+8. When the experiment is complete, stop the recording script.
+9. Make sure to save the notes from the experiment. Save your notes file in the format
  `notes_<payload>_<date>_<time>.extension`, where <payload> is the name of the payload
    (e.g., "payload1"), <date> is the date of the experiment in YYYYMMDD format, and
    <time> is the time of the experiment start in HHMM format.
@@ -115,11 +164,18 @@ included on all payloads.
 # 6. (After) Verify the data
 
 1. Use `ros2 bag info` to check that the bag file is complete and has all the expected topics.
+   1. TODO: update with expected topics
+   - ouster: `/os_cloud_node/points`
+   - doodle-labs: `/doodle_labs/scan`
+   - spinnaker: `/spinnaker/stereo/left/image_raw` and `/spinnaker/stereo/right/image_raw`
+   - vectornav: `/vectornav/ins`
+   - ublox gps: `/ublox_gps/fix`
+   - sensor monitor: `/sensor_monitor/status`
 2. Visualize the data using RViz/Foxglove Studio to ensure that the data looks correct.
    1. **Point cloud**: no gaps or weird artifacts
    2. **Stereo images**: images are clear, in focus, and similar colors/exposures
    3. **IMU data**: check that the IMU data is being published and looks reasonable
-   4. **GPS data**: check that the GPS data is being published and looks reasonable
 3. Check the notes file to ensure that all events are logged correctly and that the timestamps
 
 TODO: add example of good and bad IMU data
+TODO: add example of good and bag images
