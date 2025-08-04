@@ -59,14 +59,15 @@ included on all payloads.
 | payload3     | AgileX Scout  |
 | payload4     | AgileX Hunter |
 
-
-2. `cd ~/NeuROAM`
-3. `git pull`
-4. `git submodule update --init --recursive`
-5. `colcon build --symlink-install`
-6. `source install/setup.bash`
-7.  TODO: Alan finish the rest of this. Run the sensors, make sure no crashes, check that all nodes
-   are running, etc.
+2. Make sure the username, hostname, and password are correct for the payload.
+   - Username: `neuroam`
+   - Password: `neuroam`
+   - Hostname: `payload0`, `payload1`, `payload2`, `payload3`, or `payload4` depending on the payload.
+3. `cd ~/NeuROAM`
+4. `git pull`
+5. `git submodule update --init --recursive`
+6. `colcon build --symlink-install`
+7. `source install/setup.bash`
 
 # 2. (Before) Check that all hardware is working
 
@@ -81,7 +82,7 @@ included on all payloads.
 
 1. Disk space: run `df -h` to check that there is enough disk space on the payload.
    - TODO: We should have at least 100 GB of free space on the payload.
-   - If there is not enough space, please offload data from previous experiments.
+   - If there is not enough space, please offload data from previous experiments to the storage server.
 2. TODO: chrony/ptp status
 3. Connectivity checks: try to ping every robot. You can use the script `ping_robots.sh` to do this.
    - If a robot is not reachable, check the network connection and make sure the robot is powered on.
@@ -108,7 +109,7 @@ included on all payloads.
    5. vectornav
    6. ublox gps
    7. sensor monitor
-4. check that all necessary topics are publishing:
+4. check that all necessary topics are publishing: `ros2 topic list`
    1. TODO: update with how we want to check topics
    2. ouster: `/os_cloud_node/points`
    3. doodle-labs: `/doodle_labs/scan`
@@ -116,7 +117,6 @@ included on all payloads.
    5. vectornav: `/vectornav/ins`
    6. ublox gps: `/ublox_gps/fix`
    7. sensor monitor: `/sensor_monitor/status`
-
 
 # 3. (Before) Check calibration
 
@@ -162,10 +162,28 @@ Make sure that the calibration parameters are within the following ranges:
    - This can be done using RViz or Foxglove Studio.
    - Check that the point clouds are aligned and that there are no large gaps or misalignments.
 
-
 ## 3d. (Before) Save calibration parameters
 
 TODO: where do we want to save the calibration data?
+
+All calibration parameters should be saved to a date-stamped directory in the
+payload's data directory. The directory should be `~/data/calibration/<date>/`,
+where `<date>` is the date of the calibration in YYYYMMDD format.
+
+The calibration files should have timestamped names in the format
+`<calibration_name>_<payload>_<date>_<time>.yaml`, where `<payload>` is the name of the payload
+(e.g., "payload1"), `<date>` is the date of the calibration in YYYYMMDD format, and
+`<time>` is the time of the calibration in HHMM format.
+
+1. Save the LIDAR to IMU transformation parameters in the file
+    `lidar_imu_calibration_<payload>_<date>_<time>.yaml`
+2. Save the stereo camera to IMU transformation parameters in the file
+    `stereo_imu_calibration_<payload>_<date>_<time>.yaml`
+3. Save the stereo camera parameters in the file
+    `stereo_camera_calibration_<payload>_<date>_<time>.yaml`
+4. Save the Vectornav IMU calibration parameters in the file
+    `vectornav_imu_calibration_<payload>_<date>_<time>.yaml`
+5. TODO: save other calibration parameters as needed.
 
 # 4. (During) Run the experiment
 
