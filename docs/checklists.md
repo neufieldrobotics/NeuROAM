@@ -25,19 +25,25 @@ and after an experiment. The checklists will be listed in the order that they
 should be run through, so that anyone involved can scroll through the page
 and check off the items as they are completed.
 
-- [1. (Before) Update the payload](#1-before-update-the-payload)
-- [2. (Before) Check that all sensors are working](#2-before-check-that-all-sensors-are-working)
+- [1. (Before) Update the payload software](#1-before-update-the-payload-software)
+- [2. (Before) Check that all hardware is working](#2-before-check-that-all-hardware-is-working)
+  - [2a. Power and mechanical checks](#2a-power-and-mechanical-checks)
+  - [2b. Hardware-Software Checks](#2b-hardware-software-checks)
+  - [2c. ROS Node Checks](#2c-ros-node-checks)
 - [3. (Before) Check calibration](#3-before-check-calibration)
   - [3a. (Before) Gather calibration data](#3a-before-gather-calibration-data)
   - [3b. (Before) Process calibration data](#3b-before-process-calibration-data)
   - [3c. (Before) Check calibrations](#3c-before-check-calibrations)
   - [3d. (Before) Save calibration parameters](#3d-before-save-calibration-parameters)
 - [4. (During) Run the experiment](#4-during-run-the-experiment)
+  - [4a. Pre-experiment logging](#4a-pre-experiment-logging)
+  - [4b. Experiment execution](#4b-experiment-execution)
 - [5. (After) Offload the data](#5-after-offload-the-data)
-- [6. (After) Verify the data](#6-after-verify-the-data)
+- [6. (After) Reset the hardware](#6-after-reset-the-hardware)
+- [7. (After) Verify the data](#7-after-verify-the-data)
 
 
-# 1. (Before) Update the payload
+# 1. (Before) Update the payload software
 
 We should make sure that the payload is on the latest version of the software.
 This will make sure that any fixes or improvements that have been made are
@@ -62,11 +68,39 @@ included on all payloads.
 7.  TODO: Alan finish the rest of this. Run the sensors, make sure no crashes, check that all nodes
    are running, etc.
 
+# 2. (Before) Check that all hardware is working
 
-# 2. (Before) Check that all sensors are working
+## 2a. Power and mechanical checks
 
-1. TODO: Launch all ROS nodes: (however we want to launch)
-2. check that all nodes are running: `ros2 node list`
+1. Check that the payload is securely attached to the robot.
+2. Check cables and connections: all cables should be securely connected and not damaged.
+3. Check batteries: both the payload and the robot should be fully charged.
+4. Camera lenses should be clean and unobstructed. The cap should be removed from the stereo cameras.
+
+## 2b. Hardware-Software Checks
+
+1. Disk space: run `df -h` to check that there is enough disk space on the payload.
+   - TODO: We should have at least 100 GB of free space on the payload.
+   - If there is not enough space, please offload data from previous experiments.
+2. TODO: chrony/ptp status
+3. Connectivity checks: try to ping every robot. You can use the script `ping_robots.sh` to do this.
+   - If a robot is not reachable, check the network connection and make sure the robot is powered on.
+
+## 2c. ROS Node Checks
+
+1. TODO: ROS_DOMAIN_ID: Make sure that the ROS_DOMAIN_ID is set correctly for the payload. See below for the
+   payloads and their corresponding ROS_DOMAIN_IDs.
+
+| Payload Name | ROS_DOMAIN_ID |
+| ------------ | ------------- |
+| payload0     | 0             |
+| payload1     | 1             |
+| payload2     | 2             |
+| payload3     | 3             |
+| payload4     | 4             |
+
+2. TODO: Launch all ROS nodes: (however we want to launch)
+3. check that all nodes are running: `ros2 node list`
    1. TODO: update with node names
    2. ouster
    3. doodle-labs
@@ -74,7 +108,7 @@ included on all payloads.
    5. vectornav
    6. ublox gps
    7. sensor monitor
-3. check that all necessary topics are publishing:
+4. check that all necessary topics are publishing:
    1. TODO: update with how we want to check topics
    2. ouster: `/os_cloud_node/points`
    3. doodle-labs: `/doodle_labs/scan`
@@ -124,6 +158,9 @@ Make sure that the calibration parameters are within the following ranges:
   - accelerometer bias: [-0.1, 0.1] m/s^2
   - gyroscope bias: [-0.1, 0.1] rad/s
 5. TODO: timing offsets
+6. TODO: visualize point clouds from lidar and stereo cameras to ensure that they are aligned
+   - This can be done using RViz or Foxglove Studio.
+   - Check that the point clouds are aligned and that there are no large gaps or misalignments.
 
 
 ## 3d. (Before) Save calibration parameters
@@ -132,7 +169,21 @@ TODO: where do we want to save the calibration data?
 
 # 4. (During) Run the experiment
 
-1. TODO: add logs steps (who is using which robot, data/time, other details?)
+## 4a. Pre-experiment logging
+
+1. Take the following notes before starting the experiment:
+   - Date and time of the experiment
+   - Weather and lighting
+     - e.g., sunny, cloudy, rainy, etc.
+     - Temperature
+   - Payload name
+   - Robot name
+   - Operator name
+   - Any special instructions or considerations for the experiment
+
+## 4b. Experiment execution
+
+1. Make sure all other robots are ready
 2. Go to starting position
 3. Open note-taking app - audio or text is fine. This will be used to take notes
    during the experiment.
@@ -149,10 +200,12 @@ TODO: where do we want to save the calibration data?
    2. Anything else of note: going up/down stairs or elevators, encountering another robot, etc.
    3. Any unexpected events: crashes, sensor failures, etc.
 8. When the experiment is complete, stop the recording script.
-9. Make sure to save the notes from the experiment. Save your notes file in the format
+
+9. Save the notes from the experiment. Save your notes file in the format
  `notes_<payload>_<date>_<time>.extension`, where <payload> is the name of the payload
    (e.g., "payload1"), <date> is the date of the experiment in YYYYMMDD format, and
    <time> is the time of the experiment start in HHMM format.
+
 
 # 5. (After) Offload the data
 
@@ -160,8 +213,16 @@ TODO: where do we want to save the calibration data?
    1. The data should be copied to the directory `/data/<payload>/`, where `<payload>` is the name of the payload (e.g., "payload1")
 2. Save the notes file in the same directory as the data.
    1. Make sure the notes file is named correctly: `notes_<payload>_<date>_<time>.<extension>`
+3. TODO: Using the SSD move the data to the storage server.
+   - TODO: The data should be moved to the directory `/data/<payload>/<date>/`,
 
-# 6. (After) Verify the data
+# 6. (After) Reset the hardware
+
+1. Power off the payload and robot.
+2. Charge the batteries: both the payload and the robot should be set to fully charge.
+3. TODO: clean lenses?
+
+# 7. (After) Verify the data
 
 1. Use `ros2 bag info` to check that the bag file is complete and has all the expected topics.
    1. TODO: update with expected topics
@@ -172,10 +233,12 @@ TODO: where do we want to save the calibration data?
    - ublox gps: `/ublox_gps/fix`
    - sensor monitor: `/sensor_monitor/status`
 2. Visualize the data using RViz/Foxglove Studio to ensure that the data looks correct.
-   1. **Point cloud**: no gaps or weird artifacts
-   2. **Stereo images**: images are clear, in focus, and similar colors/exposures
-   3. **IMU data**: check that the IMU data is being published and looks reasonable
+   1. TODO: Using the `foxglove studio` configuration saved in the `docs/foxglove` directory, open the bag file and check the following.
+   2. **Point cloud**: no gaps or weird artifacts
+   3. **Stereo images**: images are clear, in focus, and similar colors/exposures
+   4. **IMU data**: check that the IMU data is being published and looks reasonable
 3. Check the notes file to ensure that all events are logged correctly and that the timestamps
+4. Once the ROS bag and notes are copied, delete the bag file from the payload to free up space.
 
 TODO: add example of good and bad IMU data
 TODO: add example of good and bag images
