@@ -81,11 +81,24 @@ included on all payloads.
 ## 2b. Hardware-Software Checks
 
 1. Disk space: run `df -h` to check that there is enough disk space on the payload.
-   - TODO: We should have at least 100 GB of free space on the payload.
+   - The harddrive is probably under `/dev/sda1` or `/dev/nvme0n1p1`.
+   - We want at least `1TB` of space under `Available` for the experiment.
    - If there is not enough space, please offload data from previous experiments to the storage server.
 2. TODO: chrony/ptp status
 3. Connectivity checks: try to ping every robot. You can use the script `ping_robots.sh` to do this.
    - If a robot is not reachable, check the network connection and make sure the robot is powered on.
+   - If you're looking for a specific robot, you can also independently use the `ping <ip_address>` command to check connectivity with a single robot. See the table below for the IP addresses of each payload.
+
+<!-- table to say payload to IP mapping for ping tests -->
+
+| Payload Name | IP Address   |
+| ------------ | ------------ |
+| payload0     | 10.19.30.100 |
+| payload1     | 10.19.30.101 |
+| payload2     | 10.19.30.102 |
+| payload3     | 10.19.30.103 |
+| payload4     | 10.19.30.104 |
+
 
 ## 2c. ROS Node Checks
 
