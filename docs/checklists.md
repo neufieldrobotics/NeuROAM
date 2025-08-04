@@ -85,7 +85,7 @@ included on all payloads.
    - We want at least `1TB` of space under `Available` for the experiment.
    - If there is not enough space, please offload data from previous experiments to the storage server.
 2. TODO: chrony/ptp status
-3. Connectivity checks: try to ping every robot. You can use the script `ping_robots.sh` to do this.
+3. Connectivity checks: try to ping every robot. You can use the script `utils/ping_robots.sh` to do this.
    - If a robot is not reachable, check the network connection and make sure the robot is powered on.
    - If you're looking for a specific robot, you can also independently use the `ping <ip_address>` command to check connectivity with a single robot. See the table below for the IP addresses of each payload.
 
