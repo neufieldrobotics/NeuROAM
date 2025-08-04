@@ -31,6 +31,9 @@ and check off the items as they are completed.
   - [3a. (Before) Gather calibration data](#3a-before-gather-calibration-data)
   - [3b. (Before) Process calibration data](#3b-before-process-calibration-data)
   - [3b. (Before) Check calibration data](#3b-before-check-calibration-data)
+- [4. (During) Run the experiment](#4-during-run-the-experiment)
+- [5. (After) Offload the data](#5-after-offload-the-data)
+- [6. (After) Verify the data](#6-after-verify-the-data)
 
 
 # 1. (Before) Update the payload
@@ -50,7 +53,23 @@ included on all payloads.
 
 # 2. (Before) Check that all sensors are working
 
-1. Launch all ROS nodes: `ros2 launch neuroam payload.launch.py`
+1. TODO: Launch all ROS nodes: (however we want to launch)
+2. check that all nodes are running: `ros2 node list`
+   1. TODO: update with node names
+   2. ouster
+   3. doodle-labs
+   4. spinnaker
+   5. vectornav
+   6. ublox gps
+   7. sensor monitor
+3. check that all necessary topics are publishing:
+   1. TODO: update with how we want to check topics
+   2. ouster: `/os_cloud_node/points`
+   3. doodle-labs: `/doodle_labs/scan`
+   4. spinnaker: `/spinnaker/stereo/left/image_raw` and `/spinnaker/stereo/right/image_raw`
+   5. vectornav: `/vectornav/ins`
+   6. ublox gps: `/ublox_gps/fix`
+   7. sensor monitor: `/sensor_monitor/status`
 
 
 # 3. (Before) Check calibration
@@ -62,3 +81,45 @@ included on all payloads.
 
 
 ## 3b. (Before) Check calibration data
+
+# 4. (During) Run the experiment
+
+1. Go to starting position
+2. Open note-taking app - audio or text is fine. This will be used to take notes
+   during the experiment.
+3. TODO: Launch the recording script:
+4. Check that the bag being recorded is named correctly:
+   - The bag should be named `<payload>_<date>_<time>.bag`, where `<payload>` is the name of the payload
+     (e.g., "payload1"), `<date>` is the date of the experiment in YYYYMMDD format, and
+     `<time>` is the time of the experiment start in HHMM format.
+   - Example: `payload1_20231001_1200.bag` for a payload named "payload1"
+     starting an experiment on October 1, 2023 at 12:00.
+5. Execute the experiment plan.
+6. Take notes during the experiment! Note the approximate time that each event occurs.
+   1. Anytime entering or exiting a building or floor
+   2. Anything else of note: going up/down stairs or elevators, encountering another robot, etc.
+   3. Any unexpected events: crashes, sensor failures, etc.
+7. When the experiment is complete, stop the recording script.
+8. Make sure to save the notes from the experiment. Save your notes file in the format
+ `notes_<payload>_<date>_<time>.extension`, where <payload> is the name of the payload
+   (e.g., "payload1"), <date> is the date of the experiment in YYYYMMDD format, and
+   <time> is the time of the experiment start in HHMM format.
+
+# 5. (After) Offload the data
+
+1. Copy the data off of the payload onto the provided portable SSD
+   1. The data should be copied to the directory `/data/<payload>/`, where `<payload>` is the name of the payload (e.g., "payload1")
+2. Save the notes file in the same directory as the data.
+   1. Make sure the notes file is named correctly: `notes_<payload>_<date>_<time>.<extension>`
+
+# 6. (After) Verify the data
+
+1. Use `ros2 bag info` to check that the bag file is complete and has all the expected topics.
+2. Visualize the data using RViz/Foxglove Studio to ensure that the data looks correct.
+   1. **Point cloud**: no gaps or weird artifacts
+   2. **Stereo images**: images are clear, in focus, and similar colors/exposures
+   3. **IMU data**: check that the IMU data is being published and looks reasonable
+   4. **GPS data**: check that the GPS data is being published and looks reasonable
+3. Check the notes file to ensure that all events are logged correctly and that the timestamps
+
+TODO: add example of good and bad IMU data
