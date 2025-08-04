@@ -74,7 +74,37 @@ python calibration_gui.py
 
 ![Load Data](demo/gui_2.png)
 
-Click "Load Bag" and select your ROS bag file (.bag), ROS2 bag (.db3), or MCAP file (.mcap). The tool will automatically detect the format and load camera images and LiDAR point clouds.
+Click "Load Bag" and select your ROS bag file (.bag), ROS2 bag (.db3), or MCAP file (.mcap). The tool will automatically:
+- **Detect the file format** (ROS1, ROS2, or MCAP)
+- **Scan for available topics** (camera images, LiDAR point clouds, camera info)
+- **Categorize topics** by type for easy selection
+
+#### Automatic Topic Detection
+
+The tool automatically detects and categorizes topics:
+- **Camera topics**: Topics containing image data (e.g., `/cam_0/image_raw`, `/camera/image`)
+- **LiDAR topics**: Topics containing point cloud data (e.g., `/ouster/points`, `/velodyne_points`)
+- **Camera info topics**: Topics containing camera calibration data (e.g., `/cam_0/camera_info`)
+
+#### Topic Selection Dialog
+
+![Topic Selection](demo/gui_6.png)
+
+If multiple camera topics are detected, you'll see a selection dialog allowing you to choose which camera to use for calibration. The tool will automatically match the corresponding camera info topic.
+
+#### MCAP Files and Metadata
+
+**Important**: For MCAP files, ensure that the `metadata.yaml` file is present in the same directory as your MCAP file. This file contains essential topic information that enables the tool to:
+- Identify available topics without reading the entire file
+- Handle potentially corrupted or incomplete MCAP files
+- Provide faster topic discovery
+
+Example directory structure:
+```
+data/
+├── your_data.mcap
+└── metadata.yaml
+```
 
 ### 3. Manual Alignment
 
@@ -161,11 +191,32 @@ euler_angles_deg:
 
 ## Supported Data Formats
 
-| Format | Extension | Description |
-|--------|-----------|-------------|
-| ROS1 Bag | `.bag` | Standard ROS1 bag files |
-| ROS2 Bag | `.db3` | ROS2 SQLite database format |
-| MCAP | `.mcap` | Modern container format for robotics data |
+| Format | Extension | Description | Requirements |
+|--------|-----------|-------------|-------------|
+| ROS1 Bag | `.bag` | Standard ROS1 bag files | None |
+| ROS2 Bag | `.db3` | ROS2 SQLite database format | None |
+| MCAP | `.mcap` | Modern container format for robotics data | Requires `metadata.yaml` in same directory |
+
+### MCAP File Requirements
+
+For MCAP files, the tool requires a `metadata.yaml` file in the same directory. This file should contain:
+- Topic names and message types
+- Message counts and timing information
+- Bag file metadata
+
+Example `metadata.yaml` structure:
+```yaml
+rosbag2_bagfile_information:
+  topics_with_message_count:
+    - topic_metadata:
+        name: /cam_0/image_raw
+        type: sensor_msgs/msg/Image
+      message_count: 1000
+    - topic_metadata:
+        name: /ouster/points
+        type: sensor_msgs/msg/PointCloud2
+      message_count: 500
+```
 
 ## Troubleshooting
 
@@ -188,11 +239,28 @@ euler_angles_deg:
    - Check the terminal for error messages
    - Ensure all dependencies are installed
 
+5. **"No camera/LiDAR topics found" error:**
+   - Check that your bag file contains the expected message types
+   - For MCAP files, ensure `metadata.yaml` is present and correctly formatted
+   - Verify topic names match expected patterns (e.g., topics containing "image", "camera", "lidar", "points")
+
+6. **MCAP file reading issues:**
+   - Ensure `metadata.yaml` file is in the same directory as the MCAP file
+   - Check that the MCAP file is not corrupted or incomplete
+   - Try using a different MCAP file or re-export your data
+
+7. **Topic selection dialog doesn't appear:**
+   - This is normal when only one camera topic is detected
+   - The tool automatically selects the single available camera topic
+   - Multiple camera topics will trigger the selection dialog
+
 ### Performance Tips
 
 - For large datasets, consider downsampling your point clouds before calibration
-- MCAP format generally provides better performance than ROS bags
+- MCAP format generally provides better performance than ROS bags (when properly formatted)
 - Close other applications to ensure smooth real-time visualization
+- For MCAP files, having `metadata.yaml` significantly improves loading performance
+- If you have multiple camera topics, pre-select the one you want to use to avoid the selection dialog
 
 ## Sample Data
 
@@ -203,10 +271,5 @@ The repository includes sample data in the `lidar_camera_ros_data/` directory:
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
-## License
-
-This project is open source. Please check the license file for details.
-
----
 
 **Note**: This tool is designed for manual calibration. For automated calibration algorithms, consider using specialized robotics calibration packages.

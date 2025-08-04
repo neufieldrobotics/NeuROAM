@@ -41,6 +41,7 @@ try:
     from mcap.reader import make_reader
     from mcap_ros1.reader import DecoderFactory as Ros1DecoderFactory
     from mcap_ros2.reader import DecoderFactory as Ros2DecoderFactory
+    from mcap.exceptions import EndOfFile  # Add this import
     HAS_MCAP = True
 except ImportError:
     HAS_MCAP = False
@@ -183,37 +184,225 @@ class McapBagReader(BagReader):
         self.bridge = CvBridge()
         
     def read_messages(self, topics):
-        with open(self.filepath, "rb") as f:
-            reader = make_reader(f)
-            
-            # Detect ROS version from schema
-            decoder_factory = None
-            for schema in reader.get_summary().schemas.values():
-                if "ros1" in schema.name:
-                    decoder_factory = Ros1DecoderFactory()
-                    break
-                elif "ros2" in schema.name:
-                    decoder_factory = Ros2DecoderFactory()
-                    break
-            
-            if not decoder_factory:
-                # Default to ROS1 if can't detect
-                decoder_factory = Ros1DecoderFactory()
-            
-            # Read messages
-            for schema, channel, message in reader.iter_messages(
-                    topics=topics,
-                    decoder_factories=[decoder_factory]):
+        """Read messages from potentially truncated MCAP files"""
+        from mcap.stream_reader import StreamReader
+        from mcap_ros2.reader import DecoderFactory as Ros2DecoderFactory
+        from mcap_ros1.reader import DecoderFactory as Ros1DecoderFactory
+        import struct
+        
+        print("Reading MCAP file in recovery mode...")
+        
+        try:
+            with open(self.filepath, "rb") as f:
+                # Create stream reader
+                stream_reader = StreamReader(f)
                 
-                topic = channel.topic
-                timestamp = message.publish_time * 1e-9  # nanoseconds to seconds
+                # Store schemas and channels
+                schemas = {}
+                channels = {}
+                decoders = {}
                 
-                # Decode message
-                decoded_msg = decoder_factory.decoder_for(schema.name, schema.data)(message.data)
-                yield topic, decoded_msg, timestamp
+                # Set of topics we're interested in
+                topics_filter = set(topics) if topics else None
+                
+                message_count = 0
+                
+                # Read records sequentially without relying on summary
+                try:
+                    for record in stream_reader.records:
+                        # Handle different record types
+                        if hasattr(record, 'opcode'):
+                            opcode = record.opcode
+                        else:
+                            # For older versions
+                            opcode = record.type if hasattr(record, 'type') else None
+                            
+                        if opcode == 0x03:  # Schema record
+                            # Parse schema
+                            schema_id = struct.unpack('<H', record.data[0:2])[0]
+                            name_len = struct.unpack('<I', record.data[2:6])[0]
+                            name = record.data[6:6+name_len].decode('utf-8')
+                            encoding_len = struct.unpack('<I', record.data[6+name_len:10+name_len])[0]
+                            encoding = record.data[10+name_len:10+name_len+encoding_len].decode('utf-8')
+                            data = record.data[10+name_len+encoding_len:]
+                            
+                            schemas[schema_id] = {
+                                'name': name,
+                                'encoding': encoding,
+                                'data': data
+                            }
+                            
+                        elif opcode == 0x04:  # Channel record
+                            # Parse channel
+                            channel_id = struct.unpack('<H', record.data[0:2])[0]
+                            schema_id = struct.unpack('<H', record.data[2:4])[0]
+                            topic_len = struct.unpack('<I', record.data[4:8])[0]
+                            topic = record.data[8:8+topic_len].decode('utf-8')
+                            
+                            channels[channel_id] = {
+                                'schema_id': schema_id,
+                                'topic': topic
+                            }
+                            
+                        elif opcode == 0x05:  # Message record
+                            # Parse message
+                            channel_id = struct.unpack('<H', record.data[0:2])[0]
+                            sequence = struct.unpack('<I', record.data[2:6])[0]
+                            log_time = struct.unpack('<Q', record.data[6:14])[0]
+                            publish_time = struct.unpack('<Q', record.data[14:22])[0]
+                            message_data = record.data[22:]
+                            
+                            # Check if this is a topic we want
+                            if channel_id in channels:
+                                channel = channels[channel_id]
+                                topic = channel['topic']
+                                
+                                if topics_filter is None or topic in topics_filter:
+                                    # Get schema
+                                    schema_id = channel['schema_id']
+                                    if schema_id in schemas:
+                                        schema = schemas[schema_id]
+                                        
+                                        # Try to decode the message
+                                        decoded_msg = None
+                                        
+                                        # Create decoder if not cached
+                                        if schema_id not in decoders:
+                                            try:
+                                                # Try ROS2 decoder first
+                                                decoder = Ros2DecoderFactory().decoder_for(
+                                                    schema['name'], schema['data']
+                                                )
+                                                decoders[schema_id] = ('ros2', decoder)
+                                            except:
+                                                try:
+                                                    # Try ROS1 decoder
+                                                    decoder = Ros1DecoderFactory().decoder_for(
+                                                        schema['name'], schema['data']
+                                                    )
+                                                    decoders[schema_id] = ('ros1', decoder)
+                                                except:
+                                                    decoders[schema_id] = (None, None)
+                                        
+                                        # Decode message
+                                        if schema_id in decoders:
+                                            decoder_type, decoder = decoders[schema_id]
+                                            if decoder:
+                                                try:
+                                                    decoded_msg = decoder(message_data)
+                                                except Exception as e:
+                                                    print(f"Failed to decode message: {e}")
+                                        
+                                        # Create fallback message if decoding failed
+                                        if decoded_msg is None:
+                                            # For Image messages
+                                            if 'Image' in schema['name']:
+                                                class ImageMsg:
+                                                    def __init__(self):
+                                                        self.data = message_data
+                                                        self.width = 0
+                                                        self.height = 0
+                                                        self.encoding = 'bgr8'
+                                                        self.step = 0
+                                                        
+                                                decoded_msg = ImageMsg()
+                                                # Try to parse basic image info
+                                                if len(message_data) > 32:
+                                                    try:
+                                                        # This is a rough approximation
+                                                        self.height = struct.unpack('<I', message_data[8:12])[0]
+                                                        self.width = struct.unpack('<I', message_data[12:16])[0]
+                                                    except:
+                                                        pass
+                                                        
+                                            # For PointCloud2 messages
+                                            elif 'PointCloud2' in schema['name']:
+                                                class PointCloud2Msg:
+                                                    def __init__(self):
+                                                        self.data = message_data
+                                                        self.width = 0
+                                                        self.height = 1
+                                                        self.point_step = 32
+                                                        self.row_step = 0
+                                                        self.fields = []
+                                                        
+                                                decoded_msg = PointCloud2Msg()
+                                                
+                                            # For CameraInfo messages
+                                            elif 'CameraInfo' in schema['name']:
+                                                class CameraInfoMsg:
+                                                    def __init__(self):
+                                                        self.width = 0
+                                                        self.height = 0
+                                                        self.K = [0] * 9
+                                                        self.D = []
+                                                        
+                                                decoded_msg = CameraInfoMsg()
+                                        
+                                        if decoded_msg:
+                                            timestamp = publish_time * 1e-9
+                                            yield topic, decoded_msg, timestamp
+                                            message_count += 1
+                                            
+                                            if message_count % 10 == 0:
+                                                print(f"Read {message_count} messages...")
+                                            
+                                            if message_count >= 100:  # Limit for performance
+                                                print(f"Reached message limit ({message_count} messages)")
+                                                break
+                                
+                except EndOfFile:
+                    print(f"Reached end of file. Read {message_count} messages.")
+                except Exception as e:
+                    print(f"Error during message reading: {e}")
+                    
+                if message_count == 0:
+                    print("No messages could be decoded. Trying alternative approach...")
+                    
+                    # Alternative: Use make_reader with no summary
+                    f.seek(0)
+                    from mcap.reader import make_reader
+                    
+                    try:
+                        # Don't use summary
+                        reader = make_reader(f)
+                        
+                        # Read messages directly
+                        for message in reader.iter_messages(topics=topics_filter):
+                            if isinstance(message, tuple) and len(message) >= 3:
+                                schema, channel, msg = message
+                                topic = channel.topic
+                                timestamp = msg.publish_time * 1e-9
+                                
+                                # Try to decode
+                                try:
+                                    decoder = Ros2DecoderFactory().decoder_for(schema.name, schema.data)
+                                    decoded_msg = decoder(msg.data)
+                                    yield topic, decoded_msg, timestamp
+                                    message_count += 1
+                                except:
+                                    try:
+                                        decoder = Ros1DecoderFactory().decoder_for(schema.name, schema.data)
+                                        decoded_msg = decoder(msg.data)
+                                        yield topic, decoded_msg, timestamp
+                                        message_count += 1
+                                    except:
+                                        pass
+                                
+                                if message_count >= 100:
+                                    break
+                    except Exception as e:
+                        print(f"Alternative approach also failed: {e}")
+                        
+        except Exception as e:
+            print(f"Fatal error reading MCAP: {e}")
+            import traceback
+            traceback.print_exc()
+            
+        print(f"Total messages read: {message_count}")
     
     def close(self):
-        pass  # File closes automatically with context manager
+        pass
 
 class Ros2BagReader(BagReader):
     def __init__(self, filepath):
@@ -411,14 +600,173 @@ Keyboard:
         self.root.bind("<r>", lambda e: self.reset_calibration())
         self.root.bind("<space>", lambda e: self.next_frame())
         
+    def parse_metadata_yaml(self, mcap_filepath):
+        """Parse metadata.yaml file to get topic information"""
+        metadata_path = Path(mcap_filepath).parent / "metadata.yaml"
+        
+        if not metadata_path.exists():
+            return set()
+        
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = yaml.safe_load(f)
+            
+            available_topics = set()
+            
+            # Extract topics from rosbag2_bagfile_information
+            if 'rosbag2_bagfile_information' in metadata:
+                bagfile_info = metadata['rosbag2_bagfile_information']
+                if 'topics_with_message_count' in bagfile_info:
+                    for topic_info in bagfile_info['topics_with_message_count']:
+                        if 'topic_metadata' in topic_info:
+                            topic_meta = topic_info['topic_metadata']
+                            topic_name = topic_meta.get('name', '')
+                            topic_type = topic_meta.get('type', '')
+                            if topic_name and topic_type:
+                                available_topics.add((topic_name, topic_type))
+            
+            print(f"Found {len(available_topics)} topics from metadata.yaml:")
+            for topic, msg_type in sorted(available_topics):
+                print(f"  {topic} -> {msg_type}")
+            
+            return available_topics
+            
+        except Exception as e:
+            print(f"Warning: Could not parse metadata.yaml: {e}")
+            return set()
+    
+    def detect_topics(self, reader):
+        """Automatically detect camera, lidar, and camera_info topics from bag file"""
+        available_topics = set()
+        
+        # Try to get topics from different reader types
+        try:
+            if hasattr(reader, 'reader') and hasattr(reader.reader, 'get_all_topics_and_types'):
+                # ROS2 reader
+                topics_and_types = reader.reader.get_all_topics_and_types()
+                for topic_meta in topics_and_types:
+                    available_topics.add((topic_meta.name, topic_meta.type))
+            elif hasattr(reader, 'bag') and hasattr(reader.bag, 'get_type_and_topic_info'):
+                # ROS1 reader
+                info = reader.bag.get_type_and_topic_info()
+                for topic, topic_info in info.topics.items():
+                    available_topics.add((topic, topic_info.msg_type))
+            else:
+                # MCAP reader - try metadata.yaml first, then scan messages
+                print("Trying to get topics from metadata.yaml...")
+                available_topics = self.parse_metadata_yaml(reader.filepath)
+                
+                if not available_topics:
+                    print("Scanning MCAP file for topics...")
+                    message_count = 0
+                    for topic, msg, t in reader.read_messages([]):
+                        available_topics.add((topic, type(msg).__name__))
+                        message_count += 1
+                        if message_count > 50:  # Limit scanning
+                            break
+        except Exception as e:
+            print(f"Warning: Could not detect topics automatically: {e}")
+            # Fallback: try to read some messages
+            try:
+                message_count = 0
+                for topic, msg, t in reader.read_messages([]):
+                    available_topics.add((topic, type(msg).__name__))
+                    message_count += 1
+                    if message_count > 50:
+                        break
+            except:
+                pass
+        
+        if not available_topics:
+            print("No topics found!")
+        else:
+            print(f"Found {len(available_topics)} topics:")
+            for topic, msg_type in sorted(available_topics):
+                print(f"  {topic} -> {msg_type}")
+        
+        # Automatically detect relevant topics
+        camera_topics = []
+        lidar_topics = []
+        camera_info_topics = []
+        
+        for topic, msg_type in available_topics:
+            # Check for camera image topics
+            if ('Image' in msg_type or 'image' in topic.lower()) and 'camera_info' not in topic.lower():
+                camera_topics.append(topic)
+            # Check for lidar topics
+            elif 'PointCloud2' in msg_type or 'lidar' in topic.lower() or 'points' in topic.lower():
+                lidar_topics.append(topic)
+            # Check for camera info topics
+            elif 'CameraInfo' in msg_type or 'camera_info' in topic.lower():
+                camera_info_topics.append(topic)
+        
+        print(f"\nDetected topics:")
+        print(f"  Camera topics: {camera_topics}")
+        print(f"  LiDAR topics: {lidar_topics}")
+        print(f"  Camera info topics: {camera_info_topics}")
+        
+        return camera_topics, lidar_topics, camera_info_topics
+    
+    def select_topics(self, camera_topics, lidar_topics, camera_info_topics):
+        """Allow user to select topics if multiple options are available"""
+        selected_camera = None
+        selected_lidar = None
+        selected_info = None
+        
+        # Select camera topic
+        if len(camera_topics) == 1:
+            selected_camera = camera_topics[0]
+        elif len(camera_topics) > 1:
+            # Create a simple selection dialog
+            selection_window = tk.Toplevel(self.root)
+            selection_window.title("Select Camera Topic")
+            selection_window.geometry("400x300")
+            
+            tk.Label(selection_window, text="Select camera topic:").pack(pady=10)
+            
+            selected_var = tk.StringVar(value=camera_topics[0])
+            for topic in camera_topics:
+                tk.Radiobutton(selection_window, text=topic, variable=selected_var, value=topic).pack(anchor='w', padx=20)
+            
+            def confirm_selection():
+                nonlocal selected_camera
+                selected_camera = selected_var.get()
+                selection_window.destroy()
+            
+            tk.Button(selection_window, text="OK", command=confirm_selection).pack(pady=10)
+            selection_window.wait_window()
+        
+        # Select lidar topic
+        if len(lidar_topics) == 1:
+            selected_lidar = lidar_topics[0]
+        elif len(lidar_topics) > 1:
+            selected_lidar = lidar_topics[0]  # Default to first one
+        
+        # Select camera info topic
+        if len(camera_info_topics) == 1:
+            selected_info = camera_info_topics[0]
+        elif len(camera_info_topics) > 1:
+            # Try to match camera info with selected camera
+            if selected_camera:
+                # Look for camera info topic that matches the camera topic pattern
+                camera_base = selected_camera.replace('/image_raw', '').replace('/image', '')
+                for info_topic in camera_info_topics:
+                    if camera_base in info_topic:
+                        selected_info = info_topic
+                        break
+            if not selected_info:
+                selected_info = camera_info_topics[0]  # Default to first one
+        
+        return selected_camera, selected_lidar, selected_info
+    
     def load_bag(self):
         """Load ROS bag or MCAP file"""
         filepath = filedialog.askopenfilename(
-            title="Select ROS bag or MCAP file",
-            filetypes=[("ROS1 Bag", "*.bag"),
-                      ("ROS2 Bag", "*.db3"),
-                      ("MCAP", "*.mcap"),
-                      ("All files", "*.*")]
+            title="Select bag file",
+            filetypes=[("ROS1 bags", "*.bag"),
+                       ("ROS2 bags", "*.db3"),
+                       ("MCAP", "*.mcap"),
+                       ("All files", "*.*")]
         )
         
         if not filepath:
@@ -429,17 +777,48 @@ Keyboard:
             self.frames = []
             self.current_frame = 0
             
+            print(f"Loading bag file: {filepath}")
+            
             # Read bag file
             reader = BagReader.open_bag(filepath)
             
+            # Automatically detect topics
+            camera_topics, lidar_topics, camera_info_topics = self.detect_topics(reader)
+            
+            # Check if we found the required topics
+            if not camera_topics:
+                messagebox.showerror("Error", "No camera image topics found in bag file")
+                reader.close()
+                return
+            
+            if not lidar_topics:
+                messagebox.showerror("Error", "No LiDAR point cloud topics found in bag file")
+                reader.close()
+                return
+            
+            # Select topics (automatically or via user selection)
+            camera_topic, lidar_topic, info_topic = self.select_topics(
+                camera_topics, lidar_topics, camera_info_topics
+            )
+            
+            if not camera_topic or not lidar_topic:
+                messagebox.showerror("Error", "Could not select required topics")
+                reader.close()
+                return
+            
+            print(f"Using topics:")
+            print(f"  Camera: {camera_topic}")
+            print(f"  LiDAR: {lidar_topic}")
+            print(f"  Camera Info: {info_topic}")
+            
             # Topics to read
-            camera_topic = "/carla/ego_vehicle/rgb_front/image"
-            lidar_topic = "/carla/ego_vehicle/lidar"
-            info_topic = "/carla/ego_vehicle/rgb_front/camera_info"
+            topics_to_read = [camera_topic, lidar_topic]
+            if info_topic:
+                topics_to_read.append(info_topic)
             
             # Read messages
             messages = {}
-            for topic, msg, t in reader.read_messages([camera_topic, lidar_topic, info_topic]):
+            for topic, msg, t in reader.read_messages(topics_to_read):
                 if topic not in messages:
                     messages[topic] = []
                 messages[topic].append((msg, t))
