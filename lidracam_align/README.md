@@ -1,137 +1,212 @@
-# LiDAR-Camera Alignment Toolkit
+# LiDAR-Camera Calibration GUI
 
-This toolkit provides tools for extracting, converting, visualizing, and aligning LiDAR point clouds with camera images from ROS bag files.
+A simple and efficient GUI tool for manual alignment of camera frames and LiDAR point clouds from ROS/MCAP files. This tool provides mouse-based manual alignment without complex algorithms, making it easy to calibrate your sensor setup.
 
-## Overview
+## Features
 
-The LiDAR-Camera Alignment Toolkit consists of several components:
+- **Multi-format Support**: ROS1 (.bag), ROS2 (.db3), and MCAP (.mcap) files
+- **Mouse-based Manual Alignment**: Intuitive drag-and-drop calibration
+- **Real-time Visualization**: Live preview of point cloud overlay on camera images
+- **No ROS Installation Required**: Works with fallback implementations
+- **Export Calibration Parameters**: Save results in JSON or YAML format
+- **Simple and Efficient**: Minimal dependencies and clean interface
 
-1. **Data Extraction**: Extract raw data from ROS bag files
-2. **Data Conversion**: Convert raw binary data to usable formats
-3. **Visualization**: Generate visualizations of camera images and LiDAR point clouds
-4. **Alignment**: Tools for aligning LiDAR point clouds with camera images
-5. **Calibration Explorer**: Explore different calibration parameters to find optimal alignment
+## Installation
 
-## Components
+### Prerequisites
 
-### 1. Data Extraction (`extract_data.py`)
-
-This script extracts camera images and LiDAR point clouds from a ROS bag file. It handles deserialization of ROS messages and saves the raw data to files.
-
-Usage:
-```bash
-python extract_data.py --bag_file <path_to_bag_file> --output_dir <output_directory>
-```
-
-### 2. Data Conversion (`convert_raw_data.py`)
-
-This script converts raw binary data extracted from ROS bag files into usable formats:
-- Camera images are converted to PNG format
-- LiDAR point clouds are converted to NumPy arrays
-
-Usage:
-```bash
-python convert_raw_data.py
-```
-
-### 3. Visualization (`visualize_data.py`)
-
-This script generates visualizations of the converted data:
-- Camera images are displayed as-is
-- LiDAR point clouds are visualized in 3D and as top-down views
-- Simple overlays of LiDAR points on camera images are created
-
-Usage:
-```bash
-python visualize_data.py
-```
-
-### 4. Alignment Tool (`align_tool.py`)
-
-This command-line tool allows for manual alignment of LiDAR point clouds with camera images by adjusting calibration parameters.
-
-Usage:
-```bash
-python align_tool.py --image <path_to_image> --points <path_to_points> --output <output_directory> [options]
-```
-
-Options:
-- `--tx`, `--ty`, `--tz`: Translation parameters
-- `--rx`, `--ry`, `--rz`: Rotation parameters (in degrees)
-- `--scale`: Scale parameter
-- `--fx`, `--fy`: Focal length parameters
-- `--params`: Path to a JSON file with calibration parameters
-
-### 5. Calibration Explorer (`calibration_explorer.py`)
-
-This script generates a grid of visualizations with different parameter combinations to help find the optimal alignment.
-
-Usage:
-```bash
-python calibration_explorer.py --image <path_to_image> --points <path_to_points> --output <output_directory> [options]
-```
-
-Options:
-- `--tx-range`, `--ty-range`, `--tz-range`: Translation parameter ranges
-- `--rx-range`, `--ry-range`, `--rz-range`: Rotation parameter ranges (in degrees)
-- `--scale-range`: Scale parameter range
-- `--fx-range`, `--fy-range`: Focal length parameter ranges
-
-## GUI Application (`lidar_camera_gui.py`)
-
-The GUI application provides a graphical interface for aligning LiDAR point clouds with camera images. It allows for interactive adjustment of calibration parameters.
-
-**Note**: The GUI application may have issues in certain environments due to Qt dependencies. In such cases, use the command-line tools instead.
-
-Usage:
-```bash
-python lidar_camera_gui.py
-```
-
-## Workflow
-
-1. Extract data from ROS bag files using `extract_data.py`
-2. Convert the raw data to usable formats using `convert_raw_data.py`
-3. Visualize the data using `visualize_data.py`
-4. Explore different calibration parameters using `calibration_explorer.py`
-5. Fine-tune the alignment using `align_tool.py`
-6. (Optional) Use the GUI application for interactive alignment
-
-## Dependencies
-
-- Python 3.6+
-- NumPy
+- Python 3.7+
 - OpenCV
-- Matplotlib
-- PyQt5 (for GUI application)
-- rosbags (for ROS bag file handling)
+- NumPy
+- Tkinter (usually included with Python)
 
-Install dependencies:
+### Quick Install
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/neufieldrobotics/NeuROAM/tree/lidracam
+   git checkout lidracam
+   cd lidracam_align
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install opencv-python numpy pillow
+   
+   # For MCAP support (recommended):
+   pip install mcap mcap-ros1-support mcap-ros2-support
+   
+   # For enhanced ROS bag support:
+   pip install bagpy
+   ```
+
+3. **Run the GUI:**
+   ```bash
+   python calibration_gui.py
+   ```
+
+### Conda Environment (Recommended)
+
 ```bash
-pip install numpy opencv-python matplotlib pyqt5 rosbags
+# Create a new conda environment
+conda create -n lidarcam python=3.10
+conda activate lidarcam
+
+# Install dependencies
+pip install opencv-python numpy pillow mcap mcap-ros1-support mcap-ros2-support bagpy
+
+# Run the tool
+python calibration_gui.py
 ```
+
+## Usage
+
+### 1. Launch the GUI
+
+![GUI Launch](demo/gui_1.png)
+
+Run the calibration tool:
+```bash
+python calibration_gui.py
+```
+
+### 2. Load Your Data
+
+![Load Data](demo/gui_2.png)
+
+Click "Load Bag" and select your ROS bag file (.bag), ROS2 bag (.db3), or MCAP file (.mcap). The tool will automatically detect the format and load camera images and LiDAR point clouds.
+
+### 3. Manual Alignment
+
+![Manual Alignment](demo/gui_3.png)
+
+Use the intuitive controls to align the LiDAR points with the camera image:
+
+- **Mouse Controls:**
+  - Left click + drag: Translate the point cloud
+  - Right click + drag: Rotate the point cloud
+  - Mouse wheel: Zoom in/out
+
+- **Parameter Controls:**
+  - Translation sliders: Fine-tune X, Y, Z translation
+  - Rotation sliders: Adjust Roll, Pitch, Yaw angles
+  - Point size: Change visualization point size
+
+### 4. Real-time Preview
+
+![Real-time Preview](demo/gui_4.png)
+
+See the alignment results in real-time as you adjust parameters. The LiDAR points are color-coded by depth for better visualization.
+
+### 5. Save Calibration
+
+![Save Results](demo/gui_5.png)
+
+Once satisfied with the alignment, click "Save Calibration" to export your results in JSON or YAML format.
+
+## Output Format
+
+The calibration tool outputs the following parameters:
+
+### JSON Format
+```json
+{
+  "rotation": [
+    [0.99996192, -0.00872654, 0.00000000],
+    [0.00872654, 0.99996192, 0.00000000],
+    [0.00000000, 0.00000000, 1.00000000]
+  ],
+  "translation": [0.1, 0.05, 0.2],
+  "camera_matrix": [
+    [525.0, 0.0, 320.0],
+    [0.0, 525.0, 240.0],
+    [0.0, 0.0, 1.0]
+  ],
+  "dist_coeffs": [0.0, 0.0, 0.0, 0.0, 0.0],
+  "image_width": 640,
+  "image_height": 480
+}
+```
+
+### YAML Format
+```yaml
+rotation:
+- [0.99996192, -0.00872654, 0.00000000]
+- [0.00872654, 0.99996192, 0.00000000]
+- [0.00000000, 0.00000000, 1.00000000]
+translation: [0.1, 0.05, 0.2]
+camera_matrix:
+- [525.0, 0.0, 320.0]
+- [0.0, 525.0, 240.0]
+- [0.0, 0.0, 1.0]
+dist_coeffs: [0.0, 0.0, 0.0, 0.0, 0.0]
+image_width: 640
+image_height: 480
+
+# Rotation matrix in readable format:
+# [R1 R2 R3]
+# [R4 R5 R6]
+# [R7 R8 R9]
+rotation_matrix_formatted: |
+  [ 0.99996192 -0.00872654  0.00000000]
+  [ 0.00872654  0.99996192  0.00000000]
+  [ 0.00000000  0.00000000  1.00000000]
+
+# Euler angles (degrees) [Roll, Pitch, Yaw]:
+euler_angles_deg:
+  roll: 0.000000
+  pitch: 0.000000
+  yaw: 0.500000
+```
+
+## Supported Data Formats
+
+| Format | Extension | Description |
+|--------|-----------|-------------|
+| ROS1 Bag | `.bag` | Standard ROS1 bag files |
+| ROS2 Bag | `.db3` | ROS2 SQLite database format |
+| MCAP | `.mcap` | Modern container format for robotics data |
 
 ## Troubleshooting
 
-### Qt Platform Plugin Issues
+### Common Issues
 
-If you encounter Qt platform plugin issues when running the GUI application, try the following:
-
-1. Use the command-line tools instead of the GUI application
-2. Set the `QT_QPA_PLATFORM` environment variable:
+1. **"No bag reading libraries found" error:**
    ```bash
-   export QT_QPA_PLATFORM=offscreen
-   ```
-3. Install additional Qt dependencies:
-   ```bash
-   pip install pyqt5-tools
+   pip install mcap mcap-ros1-support mcap-ros2-support
    ```
 
-### Visualization Issues
+2. **"ROS messages not available" warning:**
+   - This is normal and expected. The tool uses fallback implementations.
+   - The GUI will still work perfectly.
 
-If you encounter issues with matplotlib visualizations, try setting the backend to Agg:
-```python
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-```
+3. **File not visible in dialog:**
+   - Make sure your file has the correct extension (.bag, .db3, .mcap)
+   - Try selecting "All files (*.*)" in the file dialog
+
+4. **GUI closes immediately:**
+   - Check the terminal for error messages
+   - Ensure all dependencies are installed
+
+### Performance Tips
+
+- For large datasets, consider downsampling your point clouds before calibration
+- MCAP format generally provides better performance than ROS bags
+- Close other applications to ensure smooth real-time visualization
+
+## Sample Data
+
+The repository includes sample data in the `lidar_camera_ros_data/` directory:
+- `carla-v2.2-t10.bag` - Sample ROS bag file for testing
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+## License
+
+This project is open source. Please check the license file for details.
+
+---
+
+**Note**: This tool is designed for manual calibration. For automated calibration algorithms, consider using specialized robotics calibration packages.

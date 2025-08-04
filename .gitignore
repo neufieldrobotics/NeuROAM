@@ -5,3 +5,4 @@ lidracam_align/calibration_explorer
 lidracam_align/aligned_output
 lidracam_align/__pycache__
 lidracam_align/lidar_data.csv
+lidracam_align/lidar_camera_ros_data/
