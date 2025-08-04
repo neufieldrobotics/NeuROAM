@@ -215,6 +215,8 @@ TODO: where do we want to save the calibration data?
    1. Make sure the notes file is named correctly: `notes_<payload>_<date>_<time>.<extension>`
 3. TODO: Using the SSD move the data to the storage server.
    - TODO: The data should be moved to the directory `/data/<payload>/<date>/`,
+4. TODO: Use `checksum` to verify that the data was copied correctly.
+
 
 # 6. (After) Reset the hardware
 
