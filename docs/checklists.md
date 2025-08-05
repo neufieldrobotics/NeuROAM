@@ -115,23 +115,9 @@ included on all payloads.
 | payload3     | 3             |
 | payload4     | 4             |
 
-2. TODO: Launch all ROS nodes: (however we want to launch)
-3. check that all nodes are running: `ros2 node list`
-   1. TODO: update with node names
-   2. ouster
-   3. doodle-labs
-   4. spinnaker
-   5. vectornav
-   6. ublox gps
-   7. sensor monitor
-4. check that all necessary topics are publishing: `ros2 topic list`
-   1. TODO: update with how we want to check topics
-   2. ouster: `/os_cloud_node/points`
-   3. doodle-labs: `/doodle_labs/scan`
-   4. spinnaker: `/spinnaker/stereo/left/image_raw` and `/spinnaker/stereo/right/image_raw`
-   5. vectornav: `/vectornav/ins`
-   6. ublox gps: `/ublox_gps/fix`
-   7. sensor monitor: `/sensor_monitor/status`
+2. TODO: Launch all ROS nodes: Run global_launch.py
+3. check that all nodes and topics are running: Run check_nodes_and_topics.sh
+- This automated script will tell you if any nodes or topics are not available
 
 # 3. (Before) Check calibration
 
