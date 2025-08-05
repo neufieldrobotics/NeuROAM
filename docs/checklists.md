@@ -25,7 +25,7 @@ and after an experiment. The checklists will be listed in the order that they
 should be run through, so that anyone involved can scroll through the page
 and check off the items as they are completed.
 
-- [0. Connecting to payload](#0-connecting-to-payload)
+- [0. Connecting to Payload](#0-connecting-to-payload)
 - [1. (Before) Update the payload software](#1-before-update-the-payload-software)
 - [2. (Before) Check that all hardware is working](#2-before-check-that-all-hardware-is-working)
   - [2a. Power and mechanical checks](#2a-power-and-mechanical-checks)
@@ -126,19 +126,8 @@ included on all payloads.
 
 ## 2c. ROS Node Checks
 
-1. TODO: ROS_DOMAIN_ID: Make sure that the ROS_DOMAIN_ID is set correctly for the payload. See below for the
-   payloads and their corresponding ROS_DOMAIN_IDs.
-
-| Payload Name | ROS_DOMAIN_ID |
-| ------------ | ------------- |
-| payload0     | 0             |
-| payload1     | 1             |
-| payload2     | 2             |
-| payload3     | 3             |
-| payload4     | 4             |
-
-2. TODO: Launch all ROS nodes: Run global_launch.py
-3. check that all nodes and topics are running: Run check_nodes_and_topics.sh
+1. Launch all ROS nodes: run `global_launch.py` in the `launch/` directory
+2. check that all nodes and topics are running: Run check_nodes_and_topics.sh
 - This automated script will tell you if any nodes or topics are not available
 
 # 3. (Before) Check calibration
