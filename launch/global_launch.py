@@ -181,7 +181,7 @@ def generate_launch_description():
                     "-s",
                     "mcap",
                     "-o",
-                    PathJoinSubstitution(["/home/roam1/data/", bag_name]),
+                    PathJoinSubstitution(["/home/neuroam/data/", bag_name]),
                     "--max-cache-size",
                     "6442450944",
                     "--storage-preset-profile",
