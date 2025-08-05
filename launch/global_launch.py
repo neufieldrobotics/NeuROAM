@@ -17,24 +17,32 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 
+COMPUTER_HOSTNAME = os.uname()[1]
+HOSTNAME_TO_DOMAIN_ID = {
+    "payload0": 0,
+    "payload1": 1,
+    "payload2": 2,
+    "payload3": 3,
+    "payload4": 4,
+}
+if COMPUTER_HOSTNAME not in HOSTNAME_TO_DOMAIN_ID:
+    raise RuntimeError(
+        f"Unknown hostname {COMPUTER_HOSTNAME}, should be one of: {list(HOSTNAME_TO_DOMAIN_ID.keys())}"
+    )
+
+import datetime
+now = datetime.datetime.now()
+BAG_FNAME = f"{COMPUTER_HOSTNAME}_{now.strftime('%Y%m%d_%H%M')}"
+
+# def generate_bag_filename(payload: str) -> str:
+#     now = datetime.datetime.now()
+#     date_str = now.strftime("%Y%m%d")
+#     time_str = now.strftime("%H%M")
+#     return f"{payload}_{date_str}_{time_str}"
+
+DOMAIN_ID = HOSTNAME_TO_DOMAIN_ID[COMPUTER_HOSTNAME]
 
 def generate_launch_description():
-    
-    def get_domain_id():
-        computer_hostname = os.uname()[1]
-        hostname_to_domain_id = {
-            "payload0": 0,
-            "payload1": 1,
-            "payload2": 2,
-            "payload3": 3,
-            "payload4": 4,
-        }
-        domain_id = hostname_to_domain_id.get(computer_hostname, -1)
-        if domain_id == -1:
-            raise RuntimeError(
-                f"Unknown hostname {computer_hostname}, " "do not know ROS_DOMAIN_ID."
-            )
-        return domain_id
 
     # set ZENOH parameters
     zenoh_env = SetEnvironmentVariable(
@@ -43,10 +51,8 @@ def generate_launch_description():
     )
 
     # Set ROS_DOMAIN_ID based on the computer hostname
-    ros_domain_id = SetEnvironmentVariable(
-        name="ROS_DOMAIN_ID", value=str(get_domain_id())
-    )
-    
+    ros_domain_id = SetEnvironmentVariable(name="ROS_DOMAIN_ID", value=str(DOMAIN_ID))
+
     # Declare launch argument for optional rosbag recording
     record_rosbag_arg = DeclareLaunchArgument(
         "record_rosbag",
@@ -57,7 +63,7 @@ def generate_launch_description():
     # Declare launch argument for bag name
     bag_name_arg = DeclareLaunchArgument(
         "bag_name",
-        default_value="my_bag",
+        default_value=BAG_FNAME,
         description="Name for the rosbag file (without extension)",
     )
 
