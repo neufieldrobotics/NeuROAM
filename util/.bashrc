@@ -116,9 +116,9 @@ if ! shopt -oq posix; then
   fi
 fi
 
-source /opt/ros/humble/setup.bash 
+source /opt/ros/humble/setup.bash
 source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
-source ros2_ws/install/setup.bash 
+source NeuROAM/install/setup.bash
 
 alias gst="git status"
 alias ga="git add"
