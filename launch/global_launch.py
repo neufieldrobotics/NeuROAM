@@ -19,6 +19,23 @@ import os
 
 
 def generate_launch_description():
+    
+    def get_domain_id():
+        computer_hostname = os.uname()[1]
+        hostname_to_domain_id = {
+            "payload0": 0,
+            "payload1": 1,
+            "payload2": 2,
+            "payload3": 3,
+            "payload4": 4,
+        }
+        domain_id = hostname_to_domain_id.get(computer_hostname, -1)
+        if domain_id == -1:
+            raise RuntimeError(
+                f"Unknown hostname {computer_hostname}, " "do not know ROS_DOMAIN_ID."
+            )
+        return domain_id
+
     # set ZENOH parameters
     zenoh_env = SetEnvironmentVariable(
         name="ZENOH_CONFIG_OVERRIDE",
@@ -176,23 +193,6 @@ def generate_launch_description():
         ],
         condition=IfCondition(record_rosbag),
     )
-
-
-    def get_domain_id():
-        computer_hostname = os.uname()[1]
-        hostname_to_domain_id = {
-            "payload0": 0,
-            "payload1": 1,
-            "payload2": 2,
-            "payload3": 3,
-            "payload4": 4,
-        }
-        domain_id = hostname_to_domain_id.get(computer_hostname, -1)
-        if domain_id == -1:
-            raise RuntimeError(
-                f"Unknown hostname {computer_hostname}, " "do not know ROS_DOMAIN_ID."
-            )
-        return domain_id
 
     return LaunchDescription(
         [
