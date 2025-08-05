@@ -155,25 +155,32 @@ Make sure that the calibration parameters are within the following ranges:
   - y: [-0.5, 0.5] m
   - z: [-0.5, 0.5] m
   - rotation:
-2. TODO Stereo camera to IMU transformation:
+2. TODO Left camera to IMU transformation:
   - x: [-0.5, 0.5] m
   - y: [-0.5, 0.5] m
   - z: [-0.5, 0.5] m
   - rotation:
-3. TODO Stereo camera params:
+3. TODO Right camera to IMU transformation:
+  - x: [-0.5, 0.5] m
+  - y: [-0.5, 0.5] m
+  - z: [-0.5, 0.5] m
+  - rotation:
+4. TODO: LIDAR to Stereo Camera transformation:
+  - x:
+  - y:
+  - z:
+  - rotation:
+5. TODO Stereo camera params:
   - fx: [100, 1000] px
   - fy: [100, 1000] px
   - cx: [0, 1920] px
   - cy: [0, 1080] px
   - baseline: [0.05, 0.5] m
-4. TODO Vectornav IMU calibration:
-  - accelerometer bias: [-0.1, 0.1] m/s^2
-  - gyroscope bias: [-0.1, 0.1] rad/s
-5. TODO: timing offsets
-6. TODO: visualize point clouds from lidar and stereo cameras to ensure that they are aligned
+6. TODO: timing offsets
+7. TODO: visualize point clouds from lidar and stereo cameras to ensure that they are aligned
    - This can be done using RViz or Foxglove Studio.
    - Check that the point clouds are aligned and that there are no large gaps or misalignments.
-7. Verify camera instrinsic calibration reprojection error <3px
+8. Verify camera instrinsic calibration reprojection error <3px
 
 ## 3d. (Before) Save calibration parameters
 
@@ -192,11 +199,9 @@ The calibration files should have timestamped names in the format
     `lidar_imu_calibration_<payload>_<date>_<time>.yaml`
 2. Save the stereo camera to IMU transformation parameters in the file
     `stereo_imu_calibration_<payload>_<date>_<time>.yaml`
-3. Save the stereo camera parameters in the file
+3. Save the stereo camera intrinsic parameters in the file
     `stereo_camera_calibration_<payload>_<date>_<time>.yaml`
-4. Save the Vectornav IMU calibration parameters in the file
-    `vectornav_imu_calibration_<payload>_<date>_<time>.yaml`
-5. TODO: save other calibration parameters as needed.
+4.
 
 # 4. (During) Run the experiment
 
