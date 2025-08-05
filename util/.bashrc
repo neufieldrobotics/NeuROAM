@@ -128,3 +128,12 @@ alias gc="git commit"
 alias src="source ~/.bashrc"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
 
+# Set ROS_DOMAIN_ID based on payload hostname
+case "$(hostname)" in
+  payload0) export ROS_DOMAIN_ID=0 ;;
+  payload1) export ROS_DOMAIN_ID=1 ;;
+  payload2) export ROS_DOMAIN_ID=2 ;;
+  payload3) export ROS_DOMAIN_ID=3 ;;
+  payload4) export ROS_DOMAIN_ID=4 ;;
+  *) echo "⚠️  Unknown hostname '$(hostname)', ROS_DOMAIN_ID not set." ;;
+esac
