@@ -19,6 +19,17 @@ import os
 
 
 def generate_launch_description():
+    # set ZENOH parameters
+    zenoh_env = SetEnvironmentVariable(
+        name="ZENOH_CONFIG_OVERRIDE",
+        value="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000",
+    )
+
+    # Set ROS_DOMAIN_ID based on the computer hostname
+    ros_domain_id = SetEnvironmentVariable(
+        name="ROS_DOMAIN_ID", value=str(get_domain_id())
+    )
+    
     # Declare launch argument for optional rosbag recording
     record_rosbag_arg = DeclareLaunchArgument(
         "record_rosbag",
@@ -182,17 +193,6 @@ def generate_launch_description():
                 f"Unknown hostname {computer_hostname}, " "do not know ROS_DOMAIN_ID."
             )
         return domain_id
-
-    # set ZENOH parameters
-    zenoh_env = SetEnvironmentVariable(
-        name="ZENOH_CONFIG_OVERRIDE",
-        value="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000",
-    )
-
-    # Set ROS_DOMAIN_ID based on the computer hostname
-    ros_domain_id = SetEnvironmentVariable(
-        name="ROS_DOMAIN_ID", value=str(get_domain_id())
-    )
 
     return LaunchDescription(
         [
