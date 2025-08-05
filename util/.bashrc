@@ -138,3 +138,6 @@ case "$(hostname)" in
   payload4) export ROS_DOMAIN_ID=4 ;;
   *) echo "⚠️  Unknown hostname '$(hostname)', ROS_DOMAIN_ID not set." ;;
 esac
+
+# set Zenoh params
+export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
