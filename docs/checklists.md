@@ -25,6 +25,7 @@ and after an experiment. The checklists will be listed in the order that they
 should be run through, so that anyone involved can scroll through the page
 and check off the items as they are completed.
 
+- [0. Connecting to payload](#0-connecting-to-payload)
 - [1. (Before) Update the payload software](#1-before-update-the-payload-software)
 - [2. (Before) Check that all hardware is working](#2-before-check-that-all-hardware-is-working)
   - [2a. Power and mechanical checks](#2a-power-and-mechanical-checks)
@@ -41,6 +42,27 @@ and check off the items as they are completed.
 - [5. (After) Offload the data](#5-after-offload-the-data)
 - [6. (After) Reset the hardware](#6-after-reset-the-hardware)
 - [7. (After) Verify the data](#7-after-verify-the-data)
+
+# 0. Connecting to Payload
+Convenient connection to the payload is provided by the orange boxes and a combination of the legacy and mini Doodle Labs radios.
+
+The orange boxes each contain a legacy Doodle Labs radio that advertises the neufr-mesh network. You can connect to the neufr-mesh SSID from your laptop or other device that supports WiFi.
+
+The payloads each have a mini Doodle Labs radio that combine to form a separate payload mesh network. This network cannot be connected to from a standard WiFi card. The payload mesh is bridged to the neufr-mesh in each of the orange boxes where a mini radio ethernet port must be plugged into the legacy radio ethernet port.
+
+There is no DHCP server on the network and typically no router. All devices by convention assume static IP addresses on the 10.19.30/24 subnet.
+
+There is a GPS time server in each orange box (if the antenna is plugged in and has a view of the sky) at 10.19.30.2 or 10.19.30.3
+
+The lab has a ubiquiti edgerouter that is configured as a gateway to the internet if desired. The edgerouter port 0 must be plugged into the Northeastern LAN and then ports 1-3 act as a switch. The legacy and mini radio from a single orage box must be plugged into ports 1 and 2 (or 3) of the edgerouter to maintain the bridge between payload mesh and neufr-mesh as well as provide internet access to neufr-mesh.
+
+1. Power on orange box. Verify legacy radio and mini radio are either directly connected to each other or both plugged into the edgerouter.
+2. Power on payload.
+3. From your laptop, connect to neufr-mesh network
+4. In your laptop settings, assign a static IP address on your wireless interface on the 10.19.30/24 subnet. To avoid collisions, use the payload IP + 100 (if payload is 10.19.30.102, use 10.19.30.202). No two devices on the network should have the same IP. It will break things.
+5. Verify you can ping your own PC (ex. 10.19.30.202). This verifies your network settings are correct.
+5. Verify you can ping the time server in your orange box. Either 10.19.30.2 or 10.19.30.3. This verifies connectivity to the orange box via neufr-mesh
+6. Verify you can ping the payload (ex. 10.19.30.102) This verifies that the payload mesh and neufr-mesh are connect AND that the mini radio in the payload is connected to the payload mesh AND that the Jetson in the payload is connected to the mini radio and has its network interface appropriately configured.
 
 
 # 1. (Before) Update the payload software
