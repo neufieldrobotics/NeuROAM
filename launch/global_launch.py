@@ -166,6 +166,10 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
+            SetEnvironmentVariable(
+                name="ZENOH_CONFIG_OVERRIDE",
+                value="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000",
+            ),
             record_rosbag_arg,
             bag_name_arg,
             rmw_zenohd_process,
