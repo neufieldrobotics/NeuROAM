@@ -123,6 +123,7 @@ source ros2_ws/install/setup.bash
 alias gst="git status"
 alias ga="git add"
 alias gp="git push"
+alias gpull="git pull"
 alias gd="git diff"
 alias gc="git commit"
 alias src="source ~/.bashrc"
