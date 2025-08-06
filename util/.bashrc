@@ -147,16 +147,19 @@ esac
 # export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
 
 # ~/.bashrc  (or any setup script you source before running ROS 2)
+# ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
+# ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
+
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 
 export ZENOH_CONFIG_OVERRIDE="\
+transport/link/tx/queue/size=2000;\
+transport/link/tx/queue/byte_size=200MB;\
 transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000;\
-shared_memory/enabled=true"          # add more, e.g. shared_memory/segment_size=256MB
+transport/link/tx/flush_immediately=false;\
+runtime/async_pool/thread_count=6"
 
 export ZENOH_FLOW_CONTROL=false
-export RMW_ZENOH_FRAGMENT_SIZE=100000
+export RMW_ZENOH_FRAGMENT_SIZE=131072
 export RMW_ZENOH_BATCH_SIZE=100000
 export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
-
-ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
-ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
