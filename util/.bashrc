@@ -117,8 +117,10 @@ if ! shopt -oq posix; then
 fi
 
 source /opt/ros/humble/setup.bash
+echo "ROS2 Humble Active"
 source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
 source ~/NeuROAM/install/setup.bash
+echo "NeuROAM Workspace Active"
 
 alias gst="git status"
 alias ga="git add"
