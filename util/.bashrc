@@ -128,8 +128,10 @@ alias gp="git push"
 alias gpull="git pull"
 alias gd="git diff"
 alias gc="git commit"
-alias src="source ~/.bashrc"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
+
+alias src="source ~/.bashrc"
+alias src-update="cp ~/NeuROAM/util/.bashrc ~/.bashrc; source ~/.bashrc"
 
 # Set ROS_DOMAIN_ID based on payload hostname
 case "$(hostname)" in
@@ -150,3 +152,8 @@ export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ZENOH_CONFIG_OVERRIDE="\
 transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000;\
 shared_memory/enabled=true"          # add more, e.g. shared_memory/segment_size=256MB
+
+export ZENOH_FLOW_CONTROL=false
+export RMW_ZENOH_FRAGMENT_SIZE=100000
+export RMW_ZENOH_BATCH_SIZE=100000
+export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
