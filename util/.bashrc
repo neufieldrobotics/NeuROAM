@@ -161,4 +161,4 @@ export RMW_ZENOH_FRAGMENT_SIZE=131072
 export RMW_ZENOH_BATCH_SIZE=100000
 export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
 
-alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true"
+alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true > run_log.log 2>&1"
