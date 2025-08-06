@@ -141,5 +141,12 @@ case "$(hostname)" in
   *) echo "⚠️  Unknown hostname '$(hostname)', ROS_DOMAIN_ID not set." ;;
 esac
 
-# set Zenoh params
-export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
+# # set Zenoh params
+# export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
+
+# ~/.bashrc  (or any setup script you source before running ROS 2)
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+
+export ZENOH_CONFIG_OVERRIDE="\
+transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000;\
+shared_memory/enabled=true"          # add more, e.g. shared_memory/segment_size=256MB
