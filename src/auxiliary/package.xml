@@ -4,7 +4,7 @@
   <name>auxiliary</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="bhandare.aj@northeastern.edu">ajax</maintainer>
+  <maintainer email="neuroam@northeastern.edu">neuroam</maintainer>
   <license>TODO: License declaration</license>
 
   <test_depend>ament_copyright</test_depend>
