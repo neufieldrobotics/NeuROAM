@@ -24,8 +24,8 @@ class DownsamplerNode(Node):
         self.cam0_output_topic = '/downsampled_imgs/cam0/image_raw'
         self.cam1_output_topic = '/downsampled_imgs/cam1/image_raw'
 
-        self.skipcount_cam0 = 0
-        self.skipcount_cam1 = 0
+        self.skipcount_cam0 = 1
+        self.skipcount_cam1 = 1
         self.cam0_subscriber = self.create_subscription(
             Image,
             self.cam0_input_topic,
@@ -40,13 +40,13 @@ class DownsamplerNode(Node):
             10
         )
 
-        self.publisher = self.create_publisher(
+        self.publisher_cam0 = self.create_publisher(
             Image,
             self.cam0_output_topic,
             10
         )
 
-        self.publisher = self.create_publisher(
+        self.publisher_cam1 = self.create_publisher(
             Image,
             self.cam1_output_topic,
             10
@@ -59,17 +59,17 @@ class DownsamplerNode(Node):
 
     def callback_cam0(self, msg):
         
-        if self.skipcount_cam0 % self.sampling_freq == 0:
-            self.publisher.publish(msg)
-            self.skipcount_cam0 = 0
+        if self.skipcount_cam0 == self.skipcount:
+            self.publisher_cam0.publish(msg)
+            self.skipcount_cam0 = 1
         else:
             self.skipcount_cam0 += 1
 
     def callback_cam1(self, msg):
 
-        if self.skipcount_cam1 % self.sampling_freq == 0:
-            self.publisher.publish(msg)
-            self.skipcount_cam1 = 0
+        if self.skipcount_cam1 == self.skipcount:
+            self.publisher_cam1.publish(msg)
+            self.skipcount_cam1 = 1
         else:
             self.skipcount_cam1 += 1
 

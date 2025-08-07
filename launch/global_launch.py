@@ -6,6 +6,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     SetEnvironmentVariable,  # Added for cyclonedds
 )
+from launch_ros.actions import Node
 from launch.conditions import IfCondition
 from launch.substitutions import (
     LaunchConfiguration,
@@ -120,6 +121,11 @@ def generate_launch_description():
         ],
     )
 
+    downsampler_node = Node(
+        package = 'auxiliary',
+        executable='downsampler'
+    )
+
     # List of topics to record (cleaned, no leading space)
     rosbag_topics = [
         "/parameter_events",
@@ -174,6 +180,8 @@ def generate_launch_description():
         "/ouster/imu",
         "/ouster/points",
         "/ouster/telemetry",
+        "/downsampled_imgs/cam0/image_raw",
+        "/downsampled_imgs/cam1/image_raw",
     ]
 
     rosbag_record = TimerAction(
@@ -209,5 +217,6 @@ def generate_launch_description():
             rmw_zenohd_process,
             delayed_launch,
             rosbag_record,
+            downsampler_node,
         ]
     )
