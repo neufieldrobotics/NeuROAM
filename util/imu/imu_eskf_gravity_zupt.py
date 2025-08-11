@@ -220,6 +220,8 @@ def eskf_inertial_odometry(
     pos = np.zeros((n, 3))
     vel = np.zeros((n, 3))
     quat_wxyz = np.zeros((n, 4))
+    zupt_flags = np.zeros(n, dtype=bool)
+    grav_flags = np.zeros(n, dtype=bool)
 
     # --- Error-state covariance (15x15) ---
     # Diagonal is a reasonable starting point; tune if you know your uncertainties.
@@ -396,10 +398,12 @@ def eskf_inertial_odometry(
             ba += dba
 
         # 4) Zero-velocity update (when confidently stationary)
-        if zupt_gate(a_meas[i], w_meas[i]):
+        do_zupt = zupt_gate(a_meas[i], w_meas[i])
+        if do_zupt:
+
             z = np.zeros(3)  # measured velocity = 0
-            h = v
-            y = z - h
+            h = v # current velocity
+            y = z - h # innovation
 
             S = H_zupt @ P @ H_zupt.T + R_zupt
             K = P @ H_zupt.T @ np.linalg.inv(S)
@@ -425,6 +429,9 @@ def eskf_inertial_odometry(
         q_xyzw = q.as_quat()
         quat_wxyz[i] = np.array([q_xyzw[3], q_xyzw[0], q_xyzw[1], q_xyzw[2]])
 
+        zupt_flags[i] = do_zupt
+        grav_flags[i] = do_grav
+
     # --- Roll/Pitch/Yaw and their rates for plotting ---
     r_obj   = R.from_quat(quat_wxyz[:, [1, 2, 3, 0]])  # convert (wxyz) -> (xyzw)
     rpy_deg = r_obj.as_euler("xyz", degrees=True)      # roll, pitch, yaw in degrees
@@ -440,7 +447,9 @@ def eskf_inertial_odometry(
         "velocity_mps": vel,
         "attitude_quat_wxyz": quat_wxyz,
         "rpy_deg": rpy_deg,
-        "rpy_rate_dps": rpy_rate_dps
+        "rpy_rate_dps": rpy_rate_dps,
+        "zupt_flags": zupt_flags,
+        "grav_flags": grav_flags,
     }
 
 # ---------- CLI ----------
@@ -498,6 +507,40 @@ def main():
             axs[1, 1].plot(t, rdot[:, 2], label="Yaw rate")
             axs[1, 1].set_title("Orientation rates (deg/s)")
             axs[1, 1].legend(); axs[1, 1].grid(True)
+
+            def get_flag_clusters(binary):
+                diffs = np.diff(binary.astype(int))
+                starts = np.where(diffs == 1)[0] + 1  # transition 0→1
+                ends   = np.where(diffs == -1)[0] + 1 # transition 1→0
+
+                # Handle edge cases: if starts/ends at 1
+                if binary[0] == 1:
+                    starts = np.r_[0, starts]
+                if binary[-1] == 1:
+                    ends = np.r_[ends, len(binary)]
+
+                # Combine into list of (start, end) index ranges
+                clusters = list(zip(starts, ends))
+
+                return clusters
+
+            #### Commented out code to try to visualize when ZUPT and gravity aiding were applied
+            # on all of the axes, draw boxes around the times when ZUPT and gravity aiding were applied
+            # both_flags = out["zupt_flags"] & out["grav_flags"]
+            # both_boxes = get_flag_clusters(both_flags)
+            # both_box_times = [(t[start], t[end-1]) for start, end in both_boxes if end > start]
+
+            # # drop any grav flags that appear in both_flags
+            # grav_flags = out["grav_flags"] & ~both_flags
+            # grav_boxes = get_flag_clusters(grav_flags)
+            # grav_box_times = [(t[start], t[end-1]) for start, end in grav_boxes if end > start]
+
+            # for ax in [axs[0,0]]:
+            #     for start, end in grav_box_times:
+            #         ax.axvspan(start, end, color='orange', alpha=0.3, label='Gravity aiding')
+            #     for start, end in both_box_times:
+            #         ax.axvspan(start, end, color='purple', alpha=0.3, label='Both ZUPT + Gravity')
+            #### End of commented out code
 
             fig.tight_layout()
             plt.show()
