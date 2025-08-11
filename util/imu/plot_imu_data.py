@@ -3,7 +3,16 @@
 
 import argparse
 from rosbags.highlevel import AnyReader
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError as e:
+    # install instructions: export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6"
+    install_msg = "If seeing error about 'libstdc++.so.6', try running:\n" \
+                  "export LD_PRELOAD=\"$CONDA_PREFIX/lib/libstdc++.so.6\""
+    raise ImportError(f"{e} \n\n{install_msg}")
+
+# import path
+from pathlib import Path
 
 def main():
     p = argparse.ArgumentParser(description="Plot IMU accelerations and angular velocities from a ROS2 MCAP bag.")
@@ -14,10 +23,15 @@ def main():
     t, ax_x, ax_y, ax_z = [], [], [], []
     w_x, w_y, w_z = [], [], []
 
-    with AnyReader([args.bag]) as reader:
+    # print out all topics in the bag
+    bag_paths = Path(args.bag)
+    print(f"Reading bag from: {bag_paths}")
+
+    with AnyReader([bag_paths]) as reader:
         conns = [c for c in reader.connections if c.topic == args.topic]
         if not conns:
-            raise SystemExit(f"Topic {args.topic!r} not found in {args.bag}")
+            all_topics = [c.topic for c in reader.connections]
+            raise SystemExit(f"No connections found for topic '{args.topic}'. Available topics: {all_topics}")
 
         t0 = None
         for conn, ts, raw in reader.messages(connections=conns):
@@ -80,6 +94,25 @@ def main():
     fig.suptitle(f"IMU Data from {args.topic}")
     plt.tight_layout()
     plt.show()
+
+    # dump the imu data into a .pkl file in /tmp
+    import pickle
+
+    imu_data = {
+        "time": t,
+        "acceleration_x": ax_x,
+        "acceleration_y": ax_y,
+        "acceleration_z": ax_z,
+        "angular_velocity_x": w_x,
+        "angular_velocity_y": w_y,
+        "angular_velocity_z": w_z
+    }
+
+    fname = "/tmp/imu_data.pkl"
+    with open(fname, "wb") as f:
+        pickle.dump(imu_data, f)
+    print(f"IMU data saved to {fname}")
+
 
 if __name__ == "__main__":
     main()
