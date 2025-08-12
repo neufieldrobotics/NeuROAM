@@ -31,6 +31,7 @@ if COMPUTER_HOSTNAME not in HOSTNAME_TO_DOMAIN_ID:
     )
 
 import datetime
+
 now = datetime.datetime.now()
 BAG_FNAME = f"{COMPUTER_HOSTNAME}_{now.strftime('%Y%m%d_%H%M')}"
 
@@ -41,6 +42,7 @@ BAG_FNAME = f"{COMPUTER_HOSTNAME}_{now.strftime('%Y%m%d_%H%M')}"
 #     return f"{payload}_{date_str}_{time_str}"
 
 DOMAIN_ID = HOSTNAME_TO_DOMAIN_ID[COMPUTER_HOSTNAME]
+
 
 def generate_launch_description():
 
@@ -217,10 +219,12 @@ def generate_launch_description():
             condition=IfCondition(record_rosbag),
         )
 
-    small_topics_record = make_record_action(small_data_topics, bag_name+ "_small")
-    image_1_record = make_record_action(image_1_topics, bag_name + "_image1")
-    image_2_record = make_record_action(image_2_topics, bag_name + "_image2")
-    ouster_record = make_record_action(ouster_topics, bag_name + "_ouster")
+    small_topics_record = make_record_action(
+        small_data_topics, str(bag_name) + "_small"
+    )
+    image_1_record = make_record_action(image_1_topics, str(bag_name) + "_image1")
+    image_2_record = make_record_action(image_2_topics, str(bag_name) + "_image2")
+    ouster_record = make_record_action(ouster_topics, str(bag_name) + "_ouster")
 
     return LaunchDescription(
         [
