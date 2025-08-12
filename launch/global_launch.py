@@ -121,7 +121,7 @@ def generate_launch_description():
     )
 
     # List of topics to record (cleaned, no leading space)
-    rosbag_topics = [
+    small_data_topics = [
         "/parameter_events",
         "/rosout",
         "/vectornav/raw/common",
@@ -163,44 +163,64 @@ def generate_launch_description():
         "/interrupt_time",
         "/rxmsfrb",
         "/rxmraw",
+    ]
+
+    image_1_topics = [
         "/cam_sync/cam0/meta",
         "/cam_sync/cam0/image_raw",
         "/cam_sync/cam0/camera_info",
+    ]
+
+    image_2_topics = [
         "/cam_sync/cam1/meta",
         "/cam_sync/cam1/image_raw",
         "/cam_sync/cam1/camera_info",
-        # "/ouster/os_driver/transition_event",
-        # "/ouster/metadata",
-        # "/ouster/imu",
-        # "/ouster/points",
-        # "/ouster/telemetry",
     ]
 
-    rosbag_record = TimerAction(
-        period=20.0,
-        actions=[
-            ExecuteProcess(
-                cmd=[
-                    "ros2",
-                    "bag",
-                    "record",
-                    "-s",
-                    "mcap",
-                    "-o",
-                    PathJoinSubstitution(["/home/neuroam/data/", bag_name]),
-                    "--max-cache-size",
-                    "6442450944",
-                    "--storage-preset-profile",
-                    "fastwrite",
-                    # "--qos-profile-overrides-path",
-                    # "custom_qos.yaml",
-                ]
-                + rosbag_topics,
-                output="screen",
-            )
-        ],
-        condition=IfCondition(record_rosbag),
-    )
+    ouster_topics = [
+        # "/ouster/os_driver/transition_event",
+        "/ouster/metadata",
+        "/ouster/imu",
+        "/ouster/points",
+        "/ouster/telemetry",
+        # "/ouster/scan",
+        # "/ouster/reflec_image",
+        # "/ouster/signal_image",
+        # "/ouster/nearir_image",
+        # "/ouster/range_image",
+    ]
+
+    def make_record_action(topics, bag_name):
+        return TimerAction(
+            period=20.0,
+            actions=[
+                ExecuteProcess(
+                    cmd=[
+                        "ros2",
+                        "bag",
+                        "record",
+                        "-s",
+                        "mcap",
+                        "-o",
+                        PathJoinSubstitution(["/home/neuroam/data/", bag_name]),
+                        "--max-cache-size",
+                        "6442450944",
+                        "--storage-preset-profile",
+                        "fastwrite",
+                        # "--qos-profile-overrides-path",
+                        # "custom_qos.yaml",
+                    ]
+                    + topics,
+                    output="screen",
+                )
+            ],
+            condition=IfCondition(record_rosbag),
+        )
+
+    small_topics_record = make_record_action(small_data_topics, bag_name+ "_small")
+    image_1_record = make_record_action(image_1_topics, bag_name + "_image1")
+    image_2_record = make_record_action(image_2_topics, bag_name + "_image2")
+    ouster_record = make_record_action(ouster_topics, bag_name + "_ouster")
 
     return LaunchDescription(
         [
@@ -210,6 +230,9 @@ def generate_launch_description():
             bag_name_arg,
             rmw_zenohd_process,
             delayed_launch,
-            rosbag_record,
+            small_topics_record,
+            image_1_record,
+            image_2_record,
+            ouster_record,
         ]
     )
