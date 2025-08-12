@@ -9,8 +9,8 @@ if [ $# -ne 1 ]; then
 fi
 
 BAG="$1"
-# INFO="$(ros2 bag info "$BAG")"
-INFO="$(cat /home/alan/NeuROAM/util/record/sample_output.info)"
+INFO="$(ros2 bag info "$BAG")"
+# INFO="$(cat /home/alan/NeuROAM/util/record/sample_output.info)"
 
 # the percentage of the expected count that is acceptable
 # e.g., 1.1 means 10% more than expected is acceptable
