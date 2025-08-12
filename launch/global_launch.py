@@ -192,7 +192,7 @@ def generate_launch_description():
         # "/ouster/range_image",
     ]
 
-    def make_record_action(topics, bag_name):
+    def make_record_action(topics, record_bag_name, suffix=""):
         return TimerAction(
             period=20.0,
             actions=[
@@ -204,7 +204,7 @@ def generate_launch_description():
                         "-s",
                         "mcap",
                         "-o",
-                        PathJoinSubstitution(["/home/neuroam/data/", bag_name]),
+                        PathJoinSubstitution(["/home/neuroam/data/", record_bag_name, suffix]),
                         "--max-cache-size",
                         "6442450944",
                         "--storage-preset-profile",
@@ -219,12 +219,23 @@ def generate_launch_description():
             condition=IfCondition(record_rosbag),
         )
 
-    small_topics_record = make_record_action(
-        small_data_topics, str(bag_name) + "_small"
-    )
-    image_1_record = make_record_action(image_1_topics, str(bag_name) + "_image1")
-    image_2_record = make_record_action(image_2_topics, str(bag_name) + "_image2")
-    ouster_record = make_record_action(ouster_topics, str(bag_name) + "_ouster")
+    record_separate = True
+    record_actions = []
+    if record_separate:
+        record_actions = [
+            make_record_action(small_data_topics, bag_name, "_small"),
+            make_record_action(image_1_topics, bag_name, "_image1"),
+            make_record_action(image_2_topics, bag_name, "_image2"),
+            make_record_action(ouster_topics, bag_name, "_ouster"),
+        ]
+    else:
+        record_actions = [
+            make_record_action(
+                small_data_topics + image_1_topics + image_2_topics + ouster_topics,
+                bag_name,
+            )
+        ]
+
 
     return LaunchDescription(
         [
@@ -234,9 +245,6 @@ def generate_launch_description():
             bag_name_arg,
             rmw_zenohd_process,
             delayed_launch,
-            small_topics_record,
-            image_1_record,
-            image_2_record,
-            ouster_record,
+            *record_actions,
         ]
     )
