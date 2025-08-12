@@ -209,7 +209,12 @@ def generate_launch_description():
                         "mcap",
                         "-o",
                         PathJoinSubstitution(path_join),
+                        "--max-bag-size",
+                        "1000000000",  # GB
+                        "--max-bag-duration",
+                        "3600",  # seconds
                         "--max-cache-size",
+                        # "1073741824",
                         "6442450944",
                         "--storage-preset-profile",
                         "fastwrite",
