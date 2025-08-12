@@ -244,6 +244,7 @@ def generate_launch_description():
 
     record_actions = []
     if record_separate:
+        print(f"Recording separate bags for each topic set with suffixes: small, cam0, cam1, ouster")
         record_actions = [
             make_record_action(small_data_topics, bag_name, "small"),
             make_record_action(cam0_topics, bag_name, "cam0"),
@@ -251,6 +252,7 @@ def generate_launch_description():
             make_record_action(ouster_topics, bag_name, "ouster"),
         ]
     else:
+        print(f"Recording all topics in a single bag: {bag_name}")
         record_actions = [
             make_record_action(
                 small_data_topics + cam0_topics + cam1_topics + ouster_topics,
@@ -258,14 +260,14 @@ def generate_launch_description():
             )
         ]
 
-    return LaunchDescription(
-        [
-            zenoh_env,
-            ros_domain_id,
-            record_rosbag_arg,
-            bag_name_arg,
-            rmw_zenohd_process,
-            delayed_launch,
-            *record_actions,
-        ]
-    )
+    # return LaunchDescription(
+    #     [
+    #         zenoh_env,
+    #         ros_domain_id,
+    #         record_rosbag_arg,
+    #         bag_name_arg,
+    #         rmw_zenohd_process,
+    #         delayed_launch,
+    #         *record_actions,
+    #     ]
+    # )
