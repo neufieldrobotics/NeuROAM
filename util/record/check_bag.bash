@@ -79,15 +79,16 @@ for t in "${!expected[@]}"; do
   fi
   # Compute observed rate
   rate=$(awk -v c="$count" -v d="$duration" 'BEGIN{printf "%.2f", (d>0)?c/d:0}')
-  percent=$(awk -v c="$count" -v e="${expected[$t]}" 'BEGIN{printf "%.2f", (c/(e*duration))*100}')
-  exp="${expected[$t]}"
-  lo=$(echo "$exp * $LB_TOLER" | bc -l)
-  hi=$(echo "$exp * $UB_TOLER" | bc -l)
+  exp_hz="${expected[$t]}"
+  exp_msgs=$(echo "$exp_hz * $duration" | bc -l)
+  msgs_missing=$(awk -v c="$count" -v e="$exp_msgs" 'BEGIN{printf "%.0f", (e-c)}')
+  lo=$(echo "$exp_hz * $LB_TOLER" | bc -l)
+  hi=$(echo "$exp_hz * $UB_TOLER" | bc -l)
   within=$(awk -v r="$rate" -v lo="$lo" -v hi="$hi" 'BEGIN{print (r>=lo && r<=hi)?"1":"0"}')
   if [[ "$within" == "1" ]]; then
-    echo "✅ $t: count=$count, rate=${rate} Hz (target ~${exp} Hz, ${percent}%)"
+    echo "✅ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${percent}%)"
   else
-    echo "❌ $t: count=$count, rate=${rate} Hz (target ~${exp} Hz, ${percent}%)"
+    echo "❌ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${percent}%)"
   fi
 done
 

@@ -69,6 +69,15 @@ def generate_launch_description():
         description="Name for the rosbag file (without extension)",
     )
 
+    # record_separate = True
+    record_separate = LaunchConfiguration("record_separate", default="true", description="Record separate bags for small data, image1, image2, and ouster topics")
+
+    # record compressed images
+    record_compressed_images = LaunchConfiguration(
+        "record_compressed_images", default="false", description="Record compressed images (as opposed to raw images)"
+    )
+
+
     record_rosbag = LaunchConfiguration("record_rosbag")
     bag_name = LaunchConfiguration("bag_name")
 
@@ -167,17 +176,15 @@ def generate_launch_description():
         "/rxmraw",
     ]
 
-    image_1_topics = [
-        "/cam_sync/cam0/meta",
-        "/cam_sync/cam0/image_raw",
-        "/cam_sync/cam0/camera_info",
-    ]
-
-    image_2_topics = [
-        "/cam_sync/cam1/meta",
-        "/cam_sync/cam1/image_raw",
-        "/cam_sync/cam1/camera_info",
-    ]
+    image_topic_name = "image_raw/compressed" if record_compressed_images else "image_raw"
+    def get_cam_topics(cam_id):
+        return [
+            f"/cam_sync/cam{cam_id}/meta",
+            f"/cam_sync/cam{cam_id}/{image_topic_name}",
+            f"/cam_sync/cam{cam_id}/camera_info",
+        ]
+    cam0_topics = get_cam_topics(0)
+    cam1_topics = get_cam_topics(1)
 
     ouster_topics = [
         # "/ouster/os_driver/transition_event",
@@ -219,19 +226,18 @@ def generate_launch_description():
             condition=IfCondition(record_rosbag),
         )
 
-    record_separate = True
     record_actions = []
     if record_separate:
         record_actions = [
             make_record_action(small_data_topics, bag_name, "_small"),
-            make_record_action(image_1_topics, bag_name, "_image1"),
-            make_record_action(image_2_topics, bag_name, "_image2"),
+            make_record_action(cam0_topics, bag_name, "_cam0"),
+            make_record_action(cam1_topics, bag_name, "_cam1"),
             make_record_action(ouster_topics, bag_name, "_ouster"),
         ]
     else:
         record_actions = [
             make_record_action(
-                small_data_topics + image_1_topics + image_2_topics + ouster_topics,
+                small_data_topics + cam0_topics + cam1_topics + ouster_topics,
                 bag_name,
             )
         ]
