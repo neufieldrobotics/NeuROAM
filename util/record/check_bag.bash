@@ -88,9 +88,9 @@ for t in "${!expected[@]}"; do
   hi=$(echo "$exp_hz * $UB_TOLER" | bc -l)
   within=$(awk -v r="$rate" -v lo="$lo" -v hi="$hi" 'BEGIN{print (r>=lo && r<=hi)?"1":"0"}')
   if [[ "$within" == "1" ]]; then
-    echo "✅ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${percent}%)"
+    echo "✅ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${msgs_missing} msgs missing)"
   else
-    echo "❌ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${percent}%)"
+    echo "❌ $t: count=$count, rate=${rate} Hz (target ~${exp_hz} Hz, ${msgs_missing} msgs missing)"
   fi
 done
 
