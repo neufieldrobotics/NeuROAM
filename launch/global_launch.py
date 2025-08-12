@@ -35,13 +35,10 @@ import datetime
 now = datetime.datetime.now()
 BAG_FNAME = f"{COMPUTER_HOSTNAME}_{now.strftime('%Y%m%d_%H%M')}"
 
-# def generate_bag_filename(payload: str) -> str:
-#     now = datetime.datetime.now()
-#     date_str = now.strftime("%Y%m%d")
-#     time_str = now.strftime("%H%M")
-#     return f"{payload}_{date_str}_{time_str}"
-
 DOMAIN_ID = HOSTNAME_TO_DOMAIN_ID[COMPUTER_HOSTNAME]
+
+RECORD_SEPARATE = False
+RECORD_COMPRESSED_IMAGES = True
 
 
 def generate_launch_description():
@@ -69,24 +66,8 @@ def generate_launch_description():
         description="Name for the rosbag file (without extension)",
     )
 
-    # record_separate = True
-    record_separate_arg = DeclareLaunchArgument(
-        "record_separate",
-        default_value="true",
-        description="Record separate bags for small data, image1, image2, and ouster topics",
-    )
-
-    # record compressed images
-    record_compressed_images_arg = DeclareLaunchArgument(
-        "record_compressed_images",
-        default_value="false",
-        description="Record compressed images (as opposed to raw images)",
-    )
-
     record_rosbag = LaunchConfiguration("record_rosbag")
     bag_name = LaunchConfiguration("bag_name")
-    record_separate = LaunchConfiguration("record_separate")
-    record_compressed_images = LaunchConfiguration("record_compressed_images")
 
     # Start rmw_zenohd daemon
     rmw_zenohd_process = ExecuteProcess(
@@ -184,7 +165,7 @@ def generate_launch_description():
     ]
 
     image_topic_name = (
-        "image_raw/compressed" if record_compressed_images else "image_raw"
+        "image_raw/compressed" if RECORD_COMPRESSED_IMAGES else "image_raw"
     )
 
     def get_cam_topics(cam_id):
@@ -242,9 +223,7 @@ def generate_launch_description():
             condition=IfCondition(record_rosbag),
         )
 
-    record_actions = []
-    if record_separate:
-        print(f"Recording separate bags for each topic set with suffixes: small, cam0, cam1, ouster")
+    if RECORD_SEPARATE:
         record_actions = [
             make_record_action(small_data_topics, bag_name, "small"),
             make_record_action(cam0_topics, bag_name, "cam0"),
@@ -252,7 +231,6 @@ def generate_launch_description():
             make_record_action(ouster_topics, bag_name, "ouster"),
         ]
     else:
-        print(f"Recording all topics in a single bag: {bag_name}")
         record_actions = [
             make_record_action(
                 small_data_topics + cam0_topics + cam1_topics + ouster_topics,
@@ -260,14 +238,14 @@ def generate_launch_description():
             )
         ]
 
-    # return LaunchDescription(
-    #     [
-    #         zenoh_env,
-    #         ros_domain_id,
-    #         record_rosbag_arg,
-    #         bag_name_arg,
-    #         rmw_zenohd_process,
-    #         delayed_launch,
-    #         *record_actions,
-    #     ]
-    # )
+    return LaunchDescription(
+        [
+            zenoh_env,
+            ros_domain_id,
+            record_rosbag_arg,
+            bag_name_arg,
+            rmw_zenohd_process,
+            delayed_launch,
+            *record_actions,
+        ]
+    )
