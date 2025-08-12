@@ -1,0 +1,53 @@
+Files:             payload0_20250812_1147_0.mcap
+Bag size:          147.2 GiB
+Storage id:        mcap
+Duration:          3122.626099538s
+Start:             Aug 12 2025 11:47:30.131191559 (1755013650.131191559)
+End:               Aug 12 2025 12:39:32.757291097 (1755016772.757291097)
+Messages:          9804927
+Topic information: Topic: /vectornav/imu | Type: sensor_msgs/msg/Imu | Count: 624523 | Serialization Format: cdr
+                   Topic: /cam_sync/cam0/meta | Type: flir_camera_msgs/msg/ImageMetaData | Count: 62157 | Serialization Format: cdr
+                   Topic: /ublox_gps_node/fix_velocity | Type: geometry_msgs/msg/TwistWithCovarianceStamped | Count: 3122 | Serialization Format: cdr
+                   Topic: /ublox_gps_node/fix | Type: sensor_msgs/msg/NavSatFix | Count: 3122 | Serialization Format: cdr
+                   Topic: /timtm2 | Type: ublox_msgs/msg/TimTM2 | Count: 0 | Serialization Format: cdr
+                   Topic: /vectornav/imu_uncompensated | Type: sensor_msgs/msg/Imu | Count: 624528 | Serialization Format: cdr
+                   Topic: /vectornav/pose | Type: geometry_msgs/msg/PoseWithCovarianceStamped | Count: 624528 | Serialization Format: cdr
+                   Topic: /ublox_gps_node/navpvt | Type: ublox_msgs/msg/NavPVT | Count: 3122 | Serialization Format: cdr
+                   Topic: /vectornav/time_pps | Type: sensor_msgs/msg/TimeReference | Count: 624529 | Serialization Format: cdr
+                   Topic: /rxmsfrb | Type: ublox_msgs/msg/RxmSFRBX | Count: 0 | Serialization Format: cdr
+                   Topic: /tf_static | Type: tf2_msgs/msg/TFMessage | Count: 1 | Serialization Format: cdr
+                   Topic: /rxmraw | Type: ublox_msgs/msg/RxmRAWX | Count: 3122 | Serialization Format: cdr
+                   Topic: /navstatus | Type: ublox_msgs/msg/NavSTATUS | Count: 3122 | Serialization Format: cdr
+                   Topic: /vectornav/pressure | Type: sensor_msgs/msg/FluidPressure | Count: 624533 | Serialization Format: cdr
+                   Topic: /parameter_events | Type: rcl_interfaces/msg/ParameterEvent | Count: 35 | Serialization Format: cdr
+                   Topic: /cam_sync/cam1/camera_info | Type: sensor_msgs/msg/CameraInfo | Count: 61899 | Serialization Format: cdr
+                   Topic: /navcov | Type: ublox_msgs/msg/NavCOV | Count: 3123 | Serialization Format: cdr
+                   Topic: /vectornav/gnss | Type: sensor_msgs/msg/NavSatFix | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/magnetic | Type: sensor_msgs/msg/MagneticField | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/raw/attitude | Type: vectornav_msgs/msg/AttitudeGroup | Count: 0 | Serialization Format: cdr
+                   Topic: /interrupt_time | Type: sensor_msgs/msg/TimeReference | Count: 0 | Serialization Format: cdr
+                   Topic: /aidalm | Type: ublox_msgs/msg/AidALM | Count: 0 | Serialization Format: cdr
+                   Topic: /vectornav/raw/gps | Type: vectornav_msgs/msg/GpsGroup | Count: 624533 | Serialization Format: cdr
+                   Topic: /monhw | Type: ublox_msgs/msg/MonHW | Count: 3123 | Serialization Format: cdr
+                   Topic: /vectornav/raw/gps2 | Type: vectornav_msgs/msg/GpsGroup | Count: 0 | Serialization Format: cdr
+                   Topic: /vectornav/temperature | Type: sensor_msgs/msg/Temperature | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/raw/ins | Type: vectornav_msgs/msg/InsGroup | Count: 624533 | Serialization Format: cdr
+                   Topic: /cam_sync/cam1/meta | Type: flir_camera_msgs/msg/ImageMetaData | Count: 61919 | Serialization Format: cdr
+                   Topic: /vectornav/time_gps | Type: sensor_msgs/msg/TimeReference | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/raw/common | Type: vectornav_msgs/msg/CommonGroup | Count: 624533 | Serialization Format: cdr
+                   Topic: /aideph | Type: ublox_msgs/msg/AidEPH | Count: 0 | Serialization Format: cdr
+                   Topic: /vectornav/time_startup | Type: sensor_msgs/msg/TimeReference | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/time_syncin | Type: sensor_msgs/msg/TimeReference | Count: 624533 | Serialization Format: cdr
+                   Topic: /vectornav/velocity_body | Type: geometry_msgs/msg/TwistWithCovarianceStamped | Count: 624533 | Serialization Format: cdr
+                   Topic: /cam_sync/cam1/image_raw | Type: sensor_msgs/msg/Image | Count: 62044 | Serialization Format: cdr
+                   Topic: /vectornav/raw/imu | Type: vectornav_msgs/msg/ImuGroup | Count: 0 | Serialization Format: cdr
+                   Topic: /diagnostics | Type: diagnostic_msgs/msg/DiagnosticArray | Count: 3123 | Serialization Format: cdr
+                   Topic: /rosout | Type: rcl_interfaces/msg/Log | Count: 2494 | Serialization Format: cdr
+                   Topic: /rxmrtcm | Type: ublox_msgs/msg/RxmRTCM | Count: 0 | Serialization Format: cdr
+                   Topic: /cam_sync/cam0/camera_info | Type: sensor_msgs/msg/CameraInfo | Count: 62124 | Serialization Format: cdr
+                   Topic: /navclock | Type: ublox_msgs/msg/NavCLOCK | Count: 3122 | Serialization Format: cdr
+                   Topic: /navstate | Type: ublox_msgs/msg/NavSAT | Count: 156 | Serialization Format: cdr
+                   Topic: /cam_sync/cam0/image_raw | Type: sensor_msgs/msg/Image | Count: 62392 | Serialization Format: cdr
+                   Topic: /vectornav/raw/time | Type: vectornav_msgs/msg/TimeGroup | Count: 0 | Serialization Format: cdr
+                   Topic: /nmea | Type: nmea_msgs/msg/Sentence | Count: 33634 | Serialization Format: cdr
+
