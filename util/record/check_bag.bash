@@ -1,52 +1,91 @@
-#!/bin/bash
-# Usage: ./check_bag.sh <bag_name>
+#!/usr/bin/env bash
+# Usage: ./check_bag.sh <bag_dir>
+
+set -euo pipefail
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <bag_name>"
-    exit 1
+  echo "Usage: $0 <bag_dir>"
+  exit 1
 fi
 
-BAG=$1
+BAG="$1"
+# INFO="$(ros2 bag info "$BAG")"
+INFO="$(cat /home/alan/NeuROAM/util/record/sample_output.info)"
 
-# Get duration in seconds (as float)
-DURATION=$(ros2 bag info "$BAG" | grep "Duration" | awk '{print $2}' | sed 's/s//')
+# the percentage of the expected count that is acceptable
+# e.g., 1.1 means 10% more than expected is acceptable
+# 0.9 means 10% less than expected is acceptable
+EPS=0.01 # 1% tolerance
+LB_TOLER=$(echo "1 - $EPS" | bc -l)  # Lower bound tolerance
+UB_TOLER=$(echo "1 + $EPS" | bc -l)  #
 
-# Topics to check
-declare -A EXPECTED_RATES=(
-    ["/cam_sync/cam0/image_raw"]=20
-    ["/cam_sync/cam1/image_raw"]=20
-    ["/ouster/points"]=10
+
+# Extract duration in seconds (strip trailing 's')
+duration=$(awk '
+  BEGIN{FS="[[:space:]]+"}
+  /^Duration:/ {
+    gsub(/s$/,"",$2);
+    print $2; exit
+  }' <<<"$INFO")
+
+if [ -z "$duration" ]; then
+  echo "Could not parse Duration from ros2 bag info."
+  exit 2
+fi
+
+# Robust count extractor: works for both one-line (| delimited) and block formats
+count_for () {
+  local topic="$1"
+  awk -v t="$topic" '
+    # Match exact topic after "Topic:"
+    # Case A: one-line, pipe-delimited
+    $0 ~ ("Topic:[[:space:]]*" t "[[:space:]]*\\|") {
+      n=split($0, parts, /\|/)
+      for (i=1;i<=n;i++) {
+        if (parts[i] ~ /[[:space:]]*Count:[[:space:]]*/) {
+          sub(/^.*Count:[[:space:]]*/,"",parts[i])
+          gsub(/[[:space:]]+/,"",parts[i])
+          print parts[i]; exit
+        }
+      }
+    }
+    # Case B: multi-line block starting with Topic: <name>
+    $0 ~ ("Topic:[[:space:]]*" t "$") { inblk=1; next }
+    inblk && /^[[:space:]]*Count:[[:space:]]*/ {
+      c=$0; sub(/^.*Count:[[:space:]]*/,"",c); gsub(/[[:space:]]+/,"",c)
+      print c; exit
+    }
+    # If we hit a new Topic: before finding Count:, stop tracking
+    inblk && /^Topic:/ { inblk=0 }
+  ' <<<"$INFO"
+}
+
+declare -A expected=( \
+  ["/cam_sync/cam0/image_raw"]=20 \
+  ["/cam_sync/cam1/image_raw"]=20 \
+  ["/ouster/points"]=10 \
 )
 
-echo "Bag duration: ${DURATION}s"
+echo "Bag: $BAG"
+echo "Duration: ${duration}s"
 echo
 
-# Loop over topics and check rates
-for TOPIC in "${!EXPECTED_RATES[@]}"; do
-    COUNT=$(ros2 bag info "$BAG" | \
-        awk -v topic="$TOPIC" '
-            $0 ~ topic {
-                getline; # next line has message count
-                if ($1 == "Message" && $2 == "count:") print $3
-            }'
-    )
-
-    if [ -z "$COUNT" ]; then
-        echo "❌ Topic '$TOPIC' not found in bag."
-        continue
-    fi
-
-    RATE=$(awk -v count="$COUNT" -v duration="$DURATION" 'BEGIN {printf "%.2f", count/duration}')
-    EXPECTED=${EXPECTED_RATES[$TOPIC]}
-
-    # Check if within ±10% of expected
-    LOWER=$(awk -v exp="$EXPECTED" 'BEGIN {print exp*0.9}')
-    UPPER=$(awk -v exp="$EXPECTED" 'BEGIN {print exp*1.1}')
-
-    STATUS="❌"
-    if (( $(echo "$RATE >= $LOWER && $RATE <= $UPPER" | bc -l) )); then
-        STATUS="✅"
-    fi
-
-    echo "$STATUS $TOPIC: count=$COUNT, rate=${RATE}Hz (expected ~${EXPECTED}Hz)"
+for t in "${!expected[@]}"; do
+  count="$(count_for "$t" || true)"
+  if [[ -z "$count" ]]; then
+    echo "❌ $t: not found"
+    continue
+  fi
+  # Compute observed rate
+  rate=$(awk -v c="$count" -v d="$duration" 'BEGIN{printf "%.2f", (d>0)?c/d:0}')
+  exp="${expected[$t]}"
+  lo=$(echo "$exp * $LB_TOLER" | bc -l)
+  hi=$(echo "$exp * $UB_TOLER" | bc -l)
+  within=$(awk -v r="$rate" -v lo="$lo" -v hi="$hi" 'BEGIN{print (r>=lo && r<=hi)?"1":"0"}')
+  if [[ "$within" == "1" ]]; then
+    echo "✅ $t: count=$count, rate=${rate} Hz (target ~${exp} Hz)"
+  else
+    echo "❌ $t: count=$count, rate=${rate} Hz (target ~${exp} Hz)"
+  fi
 done
+
