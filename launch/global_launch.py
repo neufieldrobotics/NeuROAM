@@ -124,7 +124,6 @@ def generate_launch_description():
     rosbag_topics = [
         "/parameter_events",
         "/rosout",
-        "/ouster/os_driver/transition_event",
         "/vectornav/raw/common",
         "/vectornav/raw/time",
         "/vectornav/time_startup",
@@ -170,10 +169,11 @@ def generate_launch_description():
         "/cam_sync/cam1/meta",
         "/cam_sync/cam1/image_raw",
         "/cam_sync/cam1/camera_info",
-        "/ouster/metadata",
-        "/ouster/imu",
-        "/ouster/points",
-        "/ouster/telemetry",
+        # "/ouster/os_driver/transition_event",
+        # "/ouster/metadata",
+        # "/ouster/imu",
+        # "/ouster/points",
+        # "/ouster/telemetry",
     ]
 
     rosbag_record = TimerAction(
