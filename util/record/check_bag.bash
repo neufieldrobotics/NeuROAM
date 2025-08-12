@@ -79,7 +79,7 @@ for t in "${!expected[@]}"; do
   fi
   # Compute observed rate
   rate=$(awk -v c="$count" -v d="$duration" 'BEGIN{printf "%.2f", (d>0)?c/d:0}')
-  percent=$(awk -v c="$count" -v e="${expected[$t]}" 'BEGIN{printf "%.2f", (c/e)*100}')
+  percent=$(awk -v c="$count" -v e="${expected[$t]}" 'BEGIN{printf "%.2f", (c/(e*duration))*100}')
   exp="${expected[$t]}"
   lo=$(echo "$exp * $LB_TOLER" | bc -l)
   hi=$(echo "$exp * $UB_TOLER" | bc -l)
