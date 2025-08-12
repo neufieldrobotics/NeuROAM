@@ -70,13 +70,18 @@ def generate_launch_description():
     )
 
     # record_separate = True
-    record_separate_arg = DeclareLaunchArgument("record_separate", default_value="true", description="Record separate bags for small data, image1, image2, and ouster topics")
+    record_separate_arg = DeclareLaunchArgument(
+        "record_separate",
+        default_value="true",
+        description="Record separate bags for small data, image1, image2, and ouster topics",
+    )
 
     # record compressed images
     record_compressed_images_arg = DeclareLaunchArgument(
-        "record_compressed_images", default_value="false", description="Record compressed images (as opposed to raw images)"
+        "record_compressed_images",
+        default_value="false",
+        description="Record compressed images (as opposed to raw images)",
     )
-
 
     record_rosbag = LaunchConfiguration("record_rosbag")
     bag_name = LaunchConfiguration("bag_name")
@@ -178,13 +183,17 @@ def generate_launch_description():
         "/rxmraw",
     ]
 
-    image_topic_name = "image_raw/compressed" if record_compressed_images else "image_raw"
+    image_topic_name = (
+        "image_raw/compressed" if record_compressed_images else "image_raw"
+    )
+
     def get_cam_topics(cam_id):
         return [
             f"/cam_sync/cam{cam_id}/meta",
             f"/cam_sync/cam{cam_id}/{image_topic_name}",
             f"/cam_sync/cam{cam_id}/camera_info",
         ]
+
     cam0_topics = get_cam_topics(0)
     cam1_topics = get_cam_topics(1)
 
@@ -202,6 +211,11 @@ def generate_launch_description():
     ]
 
     def make_record_action(topics, record_bag_name, suffix=""):
+        path_join = (
+            ["/home/neuroam/data/", record_bag_name, suffix]
+            if suffix
+            else ["/home/neuroam/data/", record_bag_name]
+        )
         return TimerAction(
             period=20.0,
             actions=[
@@ -213,7 +227,7 @@ def generate_launch_description():
                         "-s",
                         "mcap",
                         "-o",
-                        PathJoinSubstitution(["/home/neuroam/data/", record_bag_name, suffix]),
+                        PathJoinSubstitution(path_join),
                         "--max-cache-size",
                         "6442450944",
                         "--storage-preset-profile",
@@ -243,7 +257,6 @@ def generate_launch_description():
                 bag_name,
             )
         ]
-
 
     return LaunchDescription(
         [
