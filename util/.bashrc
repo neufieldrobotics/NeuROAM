@@ -150,8 +150,8 @@ alias neuroam-tmux="tmux new -A -s neuroam"
 # export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
 
 # ~/.bashrc  (or any setup script you source before running ROS 2)
-# ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
-# ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
+ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
+ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
 
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 
