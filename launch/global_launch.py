@@ -245,10 +245,10 @@ def generate_launch_description():
     record_actions = []
     if record_separate:
         record_actions = [
-            make_record_action(small_data_topics, bag_name, "_small"),
-            make_record_action(cam0_topics, bag_name, "_cam0"),
-            make_record_action(cam1_topics, bag_name, "_cam1"),
-            make_record_action(ouster_topics, bag_name, "_ouster"),
+            make_record_action(small_data_topics, bag_name, "small"),
+            make_record_action(cam0_topics, bag_name, "cam0"),
+            make_record_action(cam1_topics, bag_name, "cam1"),
+            make_record_action(ouster_topics, bag_name, "ouster"),
         ]
     else:
         record_actions = [
