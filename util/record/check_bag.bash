@@ -19,6 +19,7 @@ EPS=0.01 # 1% tolerance
 LB_TOLER=$(echo "1 - $EPS" | bc -l)  # Lower bound tolerance
 UB_TOLER=$(echo "1 + $EPS" | bc -l)  #
 
+echo "Allowing ${LB_TOLER}x to ${UB_TOLER}x of expected message counts."
 
 # Extract duration in seconds (strip trailing 's')
 duration=$(awk '
