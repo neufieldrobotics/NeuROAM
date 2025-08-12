@@ -64,6 +64,8 @@ count_for () {
 declare -A expected=( \
   ["/cam_sync/cam0/image_raw"]=20 \
   ["/cam_sync/cam1/image_raw"]=20 \
+  ["/cam_sync/cam0/image_raw/compressed"]=20 \
+  ["/cam_sync/cam1/image_raw/compressed"]=20 \
   ["/ouster/points"]=10 \
 )
 
