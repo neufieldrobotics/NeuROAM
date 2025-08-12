@@ -70,16 +70,18 @@ def generate_launch_description():
     )
 
     # record_separate = True
-    record_separate = LaunchConfiguration("record_separate", default="true", description="Record separate bags for small data, image1, image2, and ouster topics")
+    record_separate_arg = LaunchConfiguration("record_separate", default="true", description="Record separate bags for small data, image1, image2, and ouster topics")
 
     # record compressed images
-    record_compressed_images = LaunchConfiguration(
+    record_compressed_images_arg = LaunchConfiguration(
         "record_compressed_images", default="false", description="Record compressed images (as opposed to raw images)"
     )
 
 
     record_rosbag = LaunchConfiguration("record_rosbag")
     bag_name = LaunchConfiguration("bag_name")
+    record_separate = LaunchConfiguration("record_separate")
+    record_compressed_images = LaunchConfiguration("record_compressed_images")
 
     # Start rmw_zenohd daemon
     rmw_zenohd_process = ExecuteProcess(
