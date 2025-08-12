@@ -70,11 +70,11 @@ def generate_launch_description():
     )
 
     # record_separate = True
-    record_separate_arg = LaunchConfiguration("record_separate", default="true", description="Record separate bags for small data, image1, image2, and ouster topics")
+    record_separate_arg = DeclareLaunchArgument("record_separate", default_value="true", description="Record separate bags for small data, image1, image2, and ouster topics")
 
     # record compressed images
-    record_compressed_images_arg = LaunchConfiguration(
-        "record_compressed_images", default="false", description="Record compressed images (as opposed to raw images)"
+    record_compressed_images_arg = DeclareLaunchArgument(
+        "record_compressed_images", default_value="false", description="Record compressed images (as opposed to raw images)"
     )
 
 
