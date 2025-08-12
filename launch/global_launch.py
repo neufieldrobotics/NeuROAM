@@ -213,8 +213,8 @@ def generate_launch_description():
                         "6442450944",
                         "--storage-preset-profile",
                         "fastwrite",
-                        # "--qos-profile-overrides-path",
-                        # "custom_qos.yaml",
+                        "--qos-profile-overrides-path",
+                        "/home/neuroam/NeuROAM/launch/custom_qos.yaml",
                     ]
                     + topics,
                     output="screen",
