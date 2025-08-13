@@ -185,9 +185,9 @@ def generate_launch_description():
         "/ouster/points",
         "/ouster/telemetry",
         # "/ouster/scan",
-        # "/ouster/reflec_image",
-        # "/ouster/signal_image",
-        # "/ouster/nearir_image",
+        "/ouster/reflec_image",
+        "/ouster/signal_image",
+        "/ouster/nearir_image",
         # "/ouster/range_image",
     ]
 
@@ -210,7 +210,7 @@ def generate_launch_description():
                         "-o",
                         PathJoinSubstitution(path_join),
                         "--max-bag-size",
-                        "1000000000",  # GB
+                        "3000000000",  # GB
                         "--max-bag-duration",
                         "3600",  # seconds
                         "--max-cache-size",
