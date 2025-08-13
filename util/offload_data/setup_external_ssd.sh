@@ -80,6 +80,46 @@ echo "Current partition table for $DEV:"
 parted -s "$DEV" print || true
 echo
 
+
+# ============================================================
+# Step 1.5: Pre-unmount any mounted partitions of this device
+#           (avoids 'in use' errors when repartitioning/formatting)
+# ============================================================
+
+echo "Checking for mounted partitions of $DEV..."
+# Gather all child partitions like /dev/sda1 /dev/sda2 ...
+mapfile -t CHILD_PARTS < <(lsblk -ln -o NAME "$DEV" | tail -n +2 | awk '{print "/dev/"$1}')
+ANY_UNMOUNTED=false
+for part in "${CHILD_PARTS[@]}"; do
+  mp="$(findmnt -no TARGET -S "$part" || true)"
+  if [[ -n "${mp:-}" ]]; then
+    echo "  Found $part mounted at $mp — attempting to unmount..."
+    if umount "$mp" 2>/dev/null; then
+      echo "    Unmounted $mp"
+      ANY_UNMOUNTED=true
+    else
+      echo "    Normal unmount failed; showing open handles (if tools available):"
+      if command -v lsof >/dev/null 2>&1; then
+        lsof +f -- "$mp" || true
+      elif command -v fuser >/dev/null 2>&1; then
+        fuser -vm "$mp" || true
+      fi
+      read -rp "    Force lazy unmount (umount -l \"$mp\")? (yes/NO): " DO_LAZY
+      DO_LAZY="${DO_LAZY,,}"
+      if [[ "$DO_LAZY" == "yes" || "$DO_LAZY" == "y" ]]; then
+        umount -l "$mp" || { echo "    Lazy unmount failed; you may need to close processes and retry."; exit 1; }
+        echo "    Lazy-unmounted $mp"
+        ANY_UNMOUNTED=true
+      else
+        echo "    Cannot proceed while $mp is busy. Aborting."
+        exit 1
+      fi
+    fi
+  fi
+done
+$ANY_UNMOUNTED && echo "All mounted partitions on $DEV have been unmounted."
+
+
 # ============================================================
 # Step 2: Decide whether to (re)partition & format the SSD
 # ============================================================
@@ -89,7 +129,7 @@ DO_FORMAT="${DO_FORMAT,,}"  # normalize to lowercase
 
 # Let the user choose a label that will become the folder name under /media/<user>/
 LABEL_DEFAULT="extssd"
-read -rp "Enter a filesystem label [default: ${LABEL_DEFAULT}]: " FS_LABEL
+read -rp "Enter a filesystem label [recommendation: payload# (e.g. 'payload0') | default: ${LABEL_DEFAULT}]: " FS_LABEL
 FS_LABEL="${FS_LABEL:-$LABEL_DEFAULT}"
 
 if [[ "$DO_FORMAT" == "yes" || "$DO_FORMAT" == "y" ]]; then
@@ -264,3 +304,4 @@ echo "  cd <SRC_DIR> && tar cf - . | pv | tar xf - -C \"$MOUNT_POINT\""
 echo
 echo "Note: With async,commit=60 a sudden power loss could lose up to ~60s of writes."
 echo "      Use stable power when doing large transfers."
+
