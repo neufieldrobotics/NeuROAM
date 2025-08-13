@@ -6,6 +6,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     SetEnvironmentVariable,  # Added for cyclonedds
 )
+
 from launch.conditions import IfCondition
 from launch.substitutions import (
     LaunchConfiguration,
@@ -118,7 +119,6 @@ def generate_launch_description():
             ),
         ],
     )
-
     # List of topics to record (cleaned, no leading space)
     small_data_topics = [
         "/parameter_events",
