@@ -185,9 +185,9 @@ def generate_launch_description():
         "/ouster/points",
         "/ouster/telemetry",
         # "/ouster/scan",
-        "/ouster/reflec_image",
-        "/ouster/signal_image",
-        "/ouster/nearir_image",
+        # "/ouster/reflec_image",
+        # "/ouster/signal_image",
+        # "/ouster/nearir_image",
         # "/ouster/range_image",
     ]
 
