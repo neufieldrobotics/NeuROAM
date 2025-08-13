@@ -128,8 +128,10 @@ alias gp="git push"
 alias gpull="git pull"
 alias gd="git diff"
 alias gc="git commit"
+alias gc="git branch"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
 
+cp ~/NeuROAM/util/.bashrc ~/.bashrc
 alias src="source ~/.bashrc"
 alias src-update="cp ~/NeuROAM/util/.bashrc ~/.bashrc; source ~/.bashrc"
 
@@ -162,3 +164,6 @@ export RMW_ZENOH_BATCH_SIZE=100000
 export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
 
 alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true > run_log.log 2>&1"
+
+#!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
+#!!!!!! WE OVERWRITE THE FILE IN THE ROOT DIRECTORY
