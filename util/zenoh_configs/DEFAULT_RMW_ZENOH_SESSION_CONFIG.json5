@@ -625,8 +625,8 @@
             real_time: 2,
             interactive_high: 2,
             interactive_low: 2,
-            data_high: 2,
-            data: 2,
+            data_high: 16,
+            data: 16,
             data_low: 2,
             background: 2,
           },
@@ -635,9 +635,9 @@
             /// Behavior pushing CongestionControl::Drop messages to the queue.
             drop: {
               /// The maximum time in microseconds to wait for an available batch before dropping a droppable message if still no batch is available.
-              wait_before_drop: 1000,
+              wait_before_drop: 1000000,
               /// The maximum deadline limit for multi-fragment messages.
-              max_wait_before_drop_fragments: 50000,
+              max_wait_before_drop_fragments: 50000000,
             },
             /// Behavior pushing CongestionControl::Block messages to the queue.
             block: {
@@ -673,7 +673,7 @@
         /// For very high throughput scenarios, the rx_buffer_size can be increased to accommodate
         /// more in-flight data. This is particularly relevant when dealing with large messages.
         /// E.g. for 16MiB rx_buffer_size set the value to: 16777216.
-        buffer_size: 65535,
+        buffer_size: 16777216,
         /// Maximum size of the defragmentation buffer at receiver end.
         /// Fragmented messages that are larger than the configured size will be dropped.
         /// The default value is 1GiB. This would work in most scenarios.

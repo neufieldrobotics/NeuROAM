@@ -31,16 +31,15 @@ if COMPUTER_HOSTNAME not in HOSTNAME_TO_DOMAIN_ID:
     )
 
 import datetime
+
 now = datetime.datetime.now()
 BAG_FNAME = f"{COMPUTER_HOSTNAME}_{now.strftime('%Y%m%d_%H%M')}"
 
-# def generate_bag_filename(payload: str) -> str:
-#     now = datetime.datetime.now()
-#     date_str = now.strftime("%Y%m%d")
-#     time_str = now.strftime("%H%M")
-#     return f"{payload}_{date_str}_{time_str}"
-
 DOMAIN_ID = HOSTNAME_TO_DOMAIN_ID[COMPUTER_HOSTNAME]
+
+RECORD_SEPARATE = False
+RECORD_COMPRESSED_IMAGES = True
+
 
 def generate_launch_description():
 
@@ -121,10 +120,9 @@ def generate_launch_description():
     )
 
     # List of topics to record (cleaned, no leading space)
-    rosbag_topics = [
+    small_data_topics = [
         "/parameter_events",
         "/rosout",
-        "/ouster/os_driver/transition_event",
         "/vectornav/raw/common",
         "/vectornav/raw/time",
         "/vectornav/time_startup",
@@ -164,41 +162,86 @@ def generate_launch_description():
         "/interrupt_time",
         "/rxmsfrb",
         "/rxmraw",
-        "/cam_sync/cam0/meta",
-        "/cam_sync/cam0/image_raw",
-        "/cam_sync/cam0/camera_info",
-        "/cam_sync/cam1/meta",
-        "/cam_sync/cam1/image_raw",
-        "/cam_sync/cam1/camera_info",
+    ]
+
+    image_topic_name = (
+        "image_raw/compressed" if RECORD_COMPRESSED_IMAGES else "image_raw"
+    )
+
+    def get_cam_topics(cam_id):
+        return [
+            f"/cam_sync/cam{cam_id}/meta",
+            f"/cam_sync/cam{cam_id}/{image_topic_name}",
+            f"/cam_sync/cam{cam_id}/camera_info",
+        ]
+
+    cam0_topics = get_cam_topics(0)
+    cam1_topics = get_cam_topics(1)
+
+    ouster_topics = [
+        # "/ouster/os_driver/transition_event",
         "/ouster/metadata",
         "/ouster/imu",
         "/ouster/points",
         "/ouster/telemetry",
+        # "/ouster/scan",
+        # "/ouster/reflec_image",
+        # "/ouster/signal_image",
+        # "/ouster/nearir_image",
+        # "/ouster/range_image",
     ]
 
-    rosbag_record = TimerAction(
-        period=20.0,
-        actions=[
-            ExecuteProcess(
-                cmd=[
-                    "ros2",
-                    "bag",
-                    "record",
-                    "-s",
-                    "mcap",
-                    "-o",
-                    PathJoinSubstitution(["/home/neuroam/data/", bag_name]),
-                    "--max-cache-size",
-                    "6442450944",
-                    "--storage-preset-profile",
-                    "fastwrite",
-                ]
-                + rosbag_topics,
-                output="screen",
+    def make_record_action(topics, record_bag_name, suffix=""):
+        path_join = (
+            ["/home/neuroam/data/", record_bag_name, suffix]
+            if suffix
+            else ["/home/neuroam/data/", record_bag_name]
+        )
+        return TimerAction(
+            period=20.0,
+            actions=[
+                ExecuteProcess(
+                    cmd=[
+                        "ros2",
+                        "bag",
+                        "record",
+                        "-s",
+                        "mcap",
+                        "-o",
+                        PathJoinSubstitution(path_join),
+                        "--max-bag-size",
+                        "3000000000",  # GB
+                        "--max-bag-duration",
+                        "3600",  # seconds
+                        "--max-cache-size",
+                        # "1073741824",
+                        "6442450944",
+                        "--storage-preset-profile",
+                        "fastwrite",
+                        "--qos-profile-overrides-path",
+                        "/home/neuroam/NeuROAM/launch/custom_qos.yaml",
+                    ]
+                    + topics,
+                    output="screen",
+                )
+            ],
+            condition=IfCondition(record_rosbag),
+        )
+
+    if RECORD_SEPARATE:
+        record_actions = [
+            make_record_action(small_data_topics, bag_name, "small"),
+            make_record_action(cam0_topics, bag_name, "cam0"),
+            make_record_action(cam1_topics, bag_name, "cam1"),
+            make_record_action(ouster_topics, bag_name, "ouster"),
+        ]
+    else:
+        record_actions = [
+            make_record_action(
+                small_data_topics + cam0_topics + cam1_topics + ouster_topics,
+                bag_name,
             )
-        ],
-        condition=IfCondition(record_rosbag),
-    )
+        ]
 
     return LaunchDescription(
         [
@@ -208,6 +251,6 @@ def generate_launch_description():
             bag_name_arg,
             rmw_zenohd_process,
             delayed_launch,
-            rosbag_record,
+            *record_actions,
         ]
     )

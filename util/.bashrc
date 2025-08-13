@@ -128,8 +128,10 @@ alias gp="git push"
 alias gpull="git pull"
 alias gd="git diff"
 alias gc="git commit"
+alias gc="git branch"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
 
+cp ~/NeuROAM/util/.bashrc ~/.bashrc
 alias src="source ~/.bashrc"
 alias src-update="cp ~/NeuROAM/util/.bashrc ~/.bashrc; source ~/.bashrc"
 
@@ -150,8 +152,8 @@ alias neuroam-tmux="tmux new -A -s neuroam"
 # export ZENOH_CONFIG_OVERRIDE="transport/link/tx/queue/congestion_control/drop/wait_before_drop=1000000"
 
 # ~/.bashrc  (or any setup script you source before running ROS 2)
-# ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
-# ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
+ZENOH_ROUTER_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5"
+ZENOH_SESSION_CONFIG_URI="~/NeuROAM/util/zenoh_configs/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5"
 
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 
@@ -162,3 +164,6 @@ export RMW_ZENOH_BATCH_SIZE=100000
 export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
 
 alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true > run_log.log 2>&1"
+
+#!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
+#!!!!!! WE OVERWRITE THE FILE IN THE ROOT DIRECTORY
