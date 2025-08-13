@@ -1,0 +1,29 @@
+/ouster/points:
+  reliability: reliable  # Match publisher
+  durability: volatile   # Don't use transient_local on recorder
+  history: keep_all
+  depth: 1
+
+/cam_sync/cam0/image_raw:
+  reliability: reliable
+  durability: volatile
+  history: keep_all
+  depth: 1
+
+/cam_sync/cam1/image_raw:
+  reliability: reliable
+  durability: volatile
+  history: keep_all
+  depth: 1
+
+/cam_sync/cam0/image_raw/compressed:
+  reliability: reliable
+  durability: volatile
+  history: keep_all
+  depth: 1
+
+/cam_sync/cam1/image_raw/compressed:
+  reliability: reliable
+  durability: volatile
+  history: keep_all
+  depth: 1

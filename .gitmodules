@@ -1,0 +1,24 @@
+[submodule "ublox"]
+	path = src/ublox
+	url = https://github.com/KumarRobotics/ublox.git
+	branch = ros2
+[submodule "src/flir_camera_driver"]
+	path = src/flir_camera_driver
+	url = git@github.com:neufieldrobotics/flir_camera_driver.git
+	branch = neuroam
+[submodule "src/doodle-labs-interface"]
+	path = src/doodle-labs-interface
+	url = git@github.com:neufieldrobotics/doodle-labs-interface.git
+	branch = main
+[submodule "src/ouster-ros"]
+	path = src/ouster-ros
+	url = git@github.com:neufieldrobotics/ouster-ros.git
+	branch = ros2
+[submodule "src/vectornav"]
+	path = src/vectornav
+	url = git@github.com:neufieldrobotics/vectornav.git
+	branch = ros2
+[submodule "src/system-health-monitor"]
+	path = src/system-health-monitor
+	url = git@github.com:neufieldrobotics/system-health-monitor.git
+	branch = main
