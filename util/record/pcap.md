@@ -45,7 +45,8 @@ sudo apt-get update && sudo apt-get install -y wireshark-common
 cd ~/NeuROAM/ouster_caps
 mergecap -w all_ouster_merged.pcap ouster_*.pcap
 # then:
-ros2 launch ouster_ros replay_pcap.launch.xml   pcap_file:=$HOME/NeuROAM/ouster_caps/all_ouster_merged.pcap   metadata:=$HOME/NeuROAM/ouster_caps/ouster_metadata.json
+ros2 launch ouster_ros replay_pcap.launch.xml   pcap_file:=$HOME/NeuROAM/ouster_caps/all_ouster_merged.pcap   metadata:=$HOME/NeuROAM/ouster_caps/ouster_metadata.json   loop:=true viz:=true timestamp_mode:=TIME_FROM_ROS_TIME
+
 ```
 
 **Notes**
