@@ -141,6 +141,12 @@ if [[ "$DO_FORMAT" == "yes" || "$DO_FORMAT" == "y" ]]; then
   read -rp "Type 'ERASE' to confirm: " CONFIRM
   [[ "$CONFIRM" == "ERASE" ]] || { echo "Confirmation not received. Aborting."; exit 1; }
 
+  # clear old signatures that sometimes confuse tools:
+  if command -v wipefs >/dev/null 2>&1; then
+    echo "Wiping old filesystem signatures on $DEV..."
+    wipefs -a "$DEV" || true
+  fi
+
   echo "Creating GPT and a single primary partition spanning the whole device..."
   parted -s "$DEV" mklabel gpt
   parted -s "$DEV" mkpart primary ext4 0% 100%
