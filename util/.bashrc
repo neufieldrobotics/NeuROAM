@@ -163,7 +163,12 @@ export RMW_ZENOH_FRAGMENT_SIZE=131072
 export RMW_ZENOH_BATCH_SIZE=100000
 export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
 
-alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true > run_log.log 2>&1"
+alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true"
+
+echo "\nREMINDERS!!"
+echo "\t1) run the command 'src-update' once to make sure you have the most up-to-date .bashrc file."
+echo "\t2) make sure that ~/NeuROAM is on the 'main' branch and use 'git pull' to make sure code is up to date"
+echo "\t3) make sure that all submodules in NeuROAM are up to date 'cd ~/NeuROAM; git pull --recurse-submodules'"
 
 #!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
 #!!!!!! WE OVERWRITE THE FILE IN THE ROOT DIRECTORY
