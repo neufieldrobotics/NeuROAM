@@ -172,5 +172,7 @@ echo "    [UPDATE MAIN REPO] make sure that ~/NeuROAM is on the 'main' branch an
 echo "    [UPDATE SUBMODULES] make sure that all submodules in NeuROAM are up to date 'cd ~/NeuROAM; git pull --recurse-submodules'"
 echo "    [CHECK STORAGE] run `df -h` to check if you have enough storage space on your system. If not, delete some files or move them to an external drive."
 
+sudo ip addr add 169.254.1.2/16 dev enP8p1s0
+
 #!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
 #!!!!!! WE OVERWRITE THE FILE IN THE ROOT DIRECTORY
