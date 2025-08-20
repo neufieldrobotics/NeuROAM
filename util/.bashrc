@@ -128,7 +128,7 @@ alias gp="git push"
 alias gpull="git pull"
 alias gd="git diff"
 alias gc="git commit"
-alias gc="git branch"
+alias gb="git branch"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
 
 cp ~/NeuROAM/util/.bashrc ~/.bashrc
