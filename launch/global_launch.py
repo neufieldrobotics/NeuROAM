@@ -116,6 +116,24 @@ def generate_launch_description():
                     )
                 )
             ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                        get_package_share_directory("system_health_monitor"),
+                        "launch",
+                        "health_monitor.launch.py",
+                    )
+                )
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                        get_package_share_directory("doodle_monitor"),
+                        "launch",
+                        "doodle_monitor.launch.py",
+                    )
+                )
+            ),
         ],
     )
 
