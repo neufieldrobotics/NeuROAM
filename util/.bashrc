@@ -165,14 +165,20 @@ export RMW_ZENOH_ROUTER_CHECK_ATTEMPTS=0
 
 alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_rosbag:=true"
 
+# only run this if hostname is 'payload2'
+if [ "$(hostname)" = "payload2" ]; then
+    echo "Setting up network interface enP8p1s0 with static IP"
+    sudo ip addr add 169.254.1.2/16 dev enP8p1s0
+fi
+
 echo ""
 echo "REMINDERS!!"
 echo "    [UPDATE ENVIRONMENT] run the command 'src-update' once to make sure you have the most up-to-date .bashrc file."
 echo "    [UPDATE MAIN REPO] make sure that ~/NeuROAM is on the 'main' branch and use 'git pull' to make sure code is up to date"
 echo "    [UPDATE SUBMODULES] make sure that all submodules in NeuROAM are up to date 'cd ~/NeuROAM; git pull --recurse-submodules'"
 echo "    [CHECK STORAGE] run `df -h` to check if you have enough storage space on your system. If not, delete some files or move them to an external drive."
+echo ""
 
-sudo ip addr add 169.254.1.2/16 dev enP8p1s0
 
 #!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
 #!!!!!! WE OVERWRITE THE FILE IN THE ROOT DIRECTORY
