@@ -167,7 +167,7 @@ alias launch-experiments="ros2 launch ~/NeuROAM/launch/global_launch.py record_r
 
 # only run this if hostname is 'payload2'
 if [ "$(hostname)" = "payload2" ]; then
-    echo "Setting up network interface enP8p1s0 with static IP"
+    echo "Setting up network interface enP8p1s0 with static IP -- this should only be done on payload2"
     sudo ip addr add 169.254.1.2/16 dev enP8p1s0
 fi
 
