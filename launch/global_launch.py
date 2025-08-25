@@ -162,7 +162,23 @@ def generate_launch_description():
         "/vectornav/velocity_body",
         "/vectornav/pose",
         "/tf_static",
+        # diagnostics
         "/diagnostics",
+        "/computer/diagnostics",
+        "/node/diagnostics",
+        # doodle labs info
+        "/doodle_monitor/iperf_result",
+        "/doodle_monitor/raw",
+        "/doodle_monitor/sys/cpu_load",
+        "/doodle_monitor/sys/freemem",
+        "/doodle_monitor/sys/localtime",
+        "/doodle_monitor/noise",
+        "/doodle_monitor/activity",
+        "/doodle_monitor/lna_status",
+        "/doodle_monitor/sta_status",
+        "/doodle_monitor/mesh_status",
+        "/doodle_monitor/peer_list",
+        # other info
         "/navstatus",
         "/navcov",
         "/navclock",
