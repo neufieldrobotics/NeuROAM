@@ -217,11 +217,11 @@ def generate_launch_description():
         "/ouster/metadata",
         "/ouster/imu",
         "/ouster/points",
-        "/ouster/telemetry",
+        # "/ouster/telemetry",
         # "/ouster/scan",
-        # "/ouster/reflec_image",
-        # "/ouster/signal_image",
-        # "/ouster/nearir_image",
+        "/ouster/reflec_image",
+        "/ouster/signal_image",
+        "/ouster/nearir_image",
         # "/ouster/range_image",
     ]
 

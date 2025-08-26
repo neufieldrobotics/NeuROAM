@@ -67,6 +67,8 @@ declare -A expected=( \
   ["/cam_sync/cam0/image_raw/compressed"]=20 \
   ["/cam_sync/cam1/image_raw/compressed"]=20 \
   ["/ouster/points"]=10 \
+  ["/vectornav/imu"]=200 \
+  ["/ublox_gps_node/fix"]=1 \
 )
 
 echo "Bag: $BAG"
