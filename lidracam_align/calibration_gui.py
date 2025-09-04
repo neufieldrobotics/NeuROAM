@@ -9,6 +9,7 @@ import json
 import yaml
 import numpy as np
 import cv2
+import os
 from pathlib import Path
 from collections import deque
 from dataclasses import dataclass, asdict
@@ -17,24 +18,51 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from PIL import Image as PILImage, ImageTk
 # Handle different bag formats
+HAS_BAGPY = False
 try:
+    # Try importing rosbag with better error handling
+    import sys
+    # Temporarily remove ROS2 paths to avoid conflicts
+    ros2_paths = [p for p in sys.path if 'ros/foxy' in p]
+    for path in ros2_paths:
+        sys.path.remove(path)
+    
     import rosbag
     HAS_ROS1 = True
-except ImportError:
+    print("ROS1 rosbag support loaded successfully")
+    
+    # Restore ROS2 paths
+    for path in ros2_paths:
+        sys.path.append(path)
+        
+except ImportError as e:
+    print(f"ROS1 rosbag import failed: {e}")
     try:
         import bagpy
         HAS_ROS1 = True
         HAS_BAGPY = True
+        print("Using bagpy as ROS1 fallback")
     except ImportError:
         HAS_ROS1 = False
         HAS_BAGPY = False
+        print("No ROS1 bag support available")
+
+# Replace this section in your script (around line 30-38)
 
 try:
+    # Try importing with proper error handling
+    import sys
+    ros2_path = '/opt/ros/foxy/lib/python3.8/site-packages'
+    if ros2_path not in sys.path:
+        sys.path.append(ros2_path)
+    
     import rosbag2_py
     from rclpy.serialization import deserialize_message
     from rosidl_runtime_py.utilities import get_message
     HAS_ROS2 = True
-except ImportError:
+    print("ROS2 support loaded successfully")
+except ImportError as e:
+    print(f"ROS2 import failed: {e}")
     HAS_ROS2 = False
 
 try:
@@ -61,7 +89,21 @@ except ImportError:
         def imgmsg_to_cv2(self, img_msg, desired_encoding="bgr8"):
             """Convert ROS Image message to OpenCV image"""
             import numpy as np
-            if hasattr(img_msg, 'data'):
+            import cv2
+            
+            # Handle CompressedImage messages
+            if hasattr(img_msg, 'format') and hasattr(img_msg, 'data'):
+                # This is a CompressedImage message
+                np_arr = np.frombuffer(img_msg.data, np.uint8)
+                img_array = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                if img_array is not None and desired_encoding == "bgr8":
+                    return img_array
+                elif img_array is not None and desired_encoding == "rgb8":
+                    return cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
+                return img_array
+            
+            # Handle regular Image messages
+            elif hasattr(img_msg, 'data') and hasattr(img_msg, 'encoding'):
                 # Handle raw image data
                 if img_msg.encoding == 'rgb8':
                     img_array = np.frombuffer(img_msg.data, dtype=np.uint8)
@@ -184,222 +226,138 @@ class McapBagReader(BagReader):
         self.bridge = CvBridge()
         
     def read_messages(self, topics):
-        """Read messages from potentially truncated MCAP files"""
-        from mcap.stream_reader import StreamReader
-        from mcap_ros2.reader import DecoderFactory as Ros2DecoderFactory
-        from mcap_ros1.reader import DecoderFactory as Ros1DecoderFactory
-        import struct
+        """Read messages from MCAP files using multiple approaches"""
+        message_count = 0
+        topics_filter = set(topics) if topics else None
         
-        print("Reading MCAP file in recovery mode...")
+        # Try rosbags with MCAP reader first
+        try:
+            from rosbags.mcap import Reader as McapReader
+            from rosbags.serde import deserialize_cdr
+            print("Reading MCAP file using rosbags MCAP reader...")
+            
+            with McapReader(open(self.filepath, "rb")) as reader:
+                # Get available topics
+                available_topics = {conn.topic: conn for conn in reader.connections.values()}
+                print(f"Available topics in MCAP: {list(available_topics.keys())}")
+                
+                # Filter topics if specified
+                if topics_filter:
+                    filtered_connections = [conn for topic, conn in available_topics.items() if topic in topics_filter]
+                else:
+                    filtered_connections = list(available_topics.values())
+                
+                print(f"Reading {len(filtered_connections)} connections...")
+                
+                # Read messages
+                for connection, timestamp, data in reader.messages(connections=filtered_connections):
+                    topic = connection.topic
+                    
+                    try:
+                        # Deserialize the message
+                        decoded_msg = deserialize_cdr(data, connection.msgtype)
+                        timestamp_sec = timestamp / 1_000_000_000  # Convert nanoseconds to seconds
+                        
+                        yield topic, decoded_msg, timestamp_sec
+                        message_count += 1
+                        
+                        if message_count % 10 == 0:
+                            print(f"Read {message_count} messages...")
+                        
+                        if message_count >= 100:  # Limit for performance
+                            print(f"Reached message limit ({message_count} messages)")
+                            break
+                            
+                    except Exception as decode_error:
+                        print(f"Failed to decode message on topic {topic}: {decode_error}")
+                        continue
+                        
+        except ImportError:
+            print("rosbags MCAP reader not available, trying standard rosbags...")
+            for topic, decoded_msg, timestamp in self._try_rosbags_standard(topics):
+                yield topic, decoded_msg, timestamp
+                message_count += 1
+            
+        except Exception as e:
+            print(f"rosbags MCAP reader failed: {e}")
+            print("Trying standard rosbags approach...")
+            for topic, decoded_msg, timestamp in self._try_rosbags_standard(topics):
+                yield topic, decoded_msg, timestamp
+                message_count += 1
+                
+        print(f"Total messages read: {message_count}")
+        
+    def _try_rosbags_standard(self, topics):
+        """Try standard rosbags approach as fallback"""
+        message_count = 0
+        
+        try:
+            from rosbags.rosbag2 import Reader
+            from rosbags.serde import deserialize_cdr
+            print("Trying standard rosbags reader...")
+            
+            # For single MCAP files, rosbags expects the parent directory
+            import os
+            bag_dir = os.path.dirname(self.filepath)
+            
+            with Reader(bag_dir) as reader:
+                available_topics = reader.topics
+                print(f"Available topics: {list(available_topics.keys())}")
+                
+                topics_filter = set(topics) if topics else None
+                filtered_topics = [t for t in available_topics.keys() if topics_filter is None or t in topics_filter]
+                
+                for connection, timestamp, rawdata in reader.messages(connections=filtered_topics):
+                    topic = connection.topic
+                    
+                    try:
+                        decoded_msg = deserialize_cdr(rawdata, connection.msgtype)
+                        timestamp_sec = timestamp * 1e-9
+                        
+                        yield topic, decoded_msg, timestamp_sec
+                        message_count += 1
+                        
+                        if message_count % 10 == 0:
+                            print(f"Read {message_count} messages...")
+                        
+                        if message_count >= 100:
+                            break
+                            
+                    except Exception as decode_error:
+                        print(f"Failed to decode message on topic {topic}: {decode_error}")
+                        continue
+                        
+        except Exception as e:
+            print(f"Standard rosbags also failed: {e}")
+            print("Trying MCAP fallback...")
+            # Final fallback to MCAP approach
+            for topic, decoded_msg, timestamp in self._read_with_mcap_fallback(topics):
+                yield topic, decoded_msg, timestamp
+                message_count += 1
+        
+    def _read_with_mcap_fallback(self, topics):
+        """Fallback MCAP reader approach"""
+        from mcap.reader import make_reader
+        from mcap_ros2.decoder import DecoderFactory
+        
+        print("Using MCAP fallback approach...")
+        topics_filter = set(topics) if topics else None
         
         try:
             with open(self.filepath, "rb") as f:
-                # Create stream reader
-                stream_reader = StreamReader(f)
+                reader = make_reader(f, decoder_factories=[DecoderFactory()])
                 
-                # Store schemas and channels
-                schemas = {}
-                channels = {}
-                decoders = {}
-                
-                # Set of topics we're interested in
-                topics_filter = set(topics) if topics else None
-                
-                message_count = 0
-                
-                # Read records sequentially without relying on summary
-                try:
-                    for record in stream_reader.records:
-                        # Handle different record types
-                        if hasattr(record, 'opcode'):
-                            opcode = record.opcode
-                        else:
-                            # For older versions
-                            opcode = record.type if hasattr(record, 'type') else None
-                            
-                        if opcode == 0x03:  # Schema record
-                            # Parse schema
-                            schema_id = struct.unpack('<H', record.data[0:2])[0]
-                            name_len = struct.unpack('<I', record.data[2:6])[0]
-                            name = record.data[6:6+name_len].decode('utf-8')
-                            encoding_len = struct.unpack('<I', record.data[6+name_len:10+name_len])[0]
-                            encoding = record.data[10+name_len:10+name_len+encoding_len].decode('utf-8')
-                            data = record.data[10+name_len+encoding_len:]
-                            
-                            schemas[schema_id] = {
-                                'name': name,
-                                'encoding': encoding,
-                                'data': data
-                            }
-                            
-                        elif opcode == 0x04:  # Channel record
-                            # Parse channel
-                            channel_id = struct.unpack('<H', record.data[0:2])[0]
-                            schema_id = struct.unpack('<H', record.data[2:4])[0]
-                            topic_len = struct.unpack('<I', record.data[4:8])[0]
-                            topic = record.data[8:8+topic_len].decode('utf-8')
-                            
-                            channels[channel_id] = {
-                                'schema_id': schema_id,
-                                'topic': topic
-                            }
-                            
-                        elif opcode == 0x05:  # Message record
-                            # Parse message
-                            channel_id = struct.unpack('<H', record.data[0:2])[0]
-                            sequence = struct.unpack('<I', record.data[2:6])[0]
-                            log_time = struct.unpack('<Q', record.data[6:14])[0]
-                            publish_time = struct.unpack('<Q', record.data[14:22])[0]
-                            message_data = record.data[22:]
-                            
-                            # Check if this is a topic we want
-                            if channel_id in channels:
-                                channel = channels[channel_id]
-                                topic = channel['topic']
-                                
-                                if topics_filter is None or topic in topics_filter:
-                                    # Get schema
-                                    schema_id = channel['schema_id']
-                                    if schema_id in schemas:
-                                        schema = schemas[schema_id]
-                                        
-                                        # Try to decode the message
-                                        decoded_msg = None
-                                        
-                                        # Create decoder if not cached
-                                        if schema_id not in decoders:
-                                            try:
-                                                # Try ROS2 decoder first
-                                                decoder = Ros2DecoderFactory().decoder_for(
-                                                    schema['name'], schema['data']
-                                                )
-                                                decoders[schema_id] = ('ros2', decoder)
-                                            except:
-                                                try:
-                                                    # Try ROS1 decoder
-                                                    decoder = Ros1DecoderFactory().decoder_for(
-                                                        schema['name'], schema['data']
-                                                    )
-                                                    decoders[schema_id] = ('ros1', decoder)
-                                                except:
-                                                    decoders[schema_id] = (None, None)
-                                        
-                                        # Decode message
-                                        if schema_id in decoders:
-                                            decoder_type, decoder = decoders[schema_id]
-                                            if decoder:
-                                                try:
-                                                    decoded_msg = decoder(message_data)
-                                                except Exception as e:
-                                                    print(f"Failed to decode message: {e}")
-                                        
-                                        # Create fallback message if decoding failed
-                                        if decoded_msg is None:
-                                            # For Image messages
-                                            if 'Image' in schema['name']:
-                                                class ImageMsg:
-                                                    def __init__(self):
-                                                        self.data = message_data
-                                                        self.width = 0
-                                                        self.height = 0
-                                                        self.encoding = 'bgr8'
-                                                        self.step = 0
-                                                        
-                                                decoded_msg = ImageMsg()
-                                                # Try to parse basic image info
-                                                if len(message_data) > 32:
-                                                    try:
-                                                        # This is a rough approximation
-                                                        self.height = struct.unpack('<I', message_data[8:12])[0]
-                                                        self.width = struct.unpack('<I', message_data[12:16])[0]
-                                                    except:
-                                                        pass
-                                                        
-                                            # For PointCloud2 messages
-                                            elif 'PointCloud2' in schema['name']:
-                                                class PointCloud2Msg:
-                                                    def __init__(self):
-                                                        self.data = message_data
-                                                        self.width = 0
-                                                        self.height = 1
-                                                        self.point_step = 32
-                                                        self.row_step = 0
-                                                        self.fields = []
-                                                        
-                                                decoded_msg = PointCloud2Msg()
-                                                
-                                            # For CameraInfo messages
-                                            elif 'CameraInfo' in schema['name']:
-                                                class CameraInfoMsg:
-                                                    def __init__(self):
-                                                        self.width = 0
-                                                        self.height = 0
-                                                        self.K = [0] * 9
-                                                        self.D = []
-                                                        
-                                                decoded_msg = CameraInfoMsg()
-                                        
-                                        if decoded_msg:
-                                            timestamp = publish_time * 1e-9
-                                            yield topic, decoded_msg, timestamp
-                                            message_count += 1
-                                            
-                                            if message_count % 10 == 0:
-                                                print(f"Read {message_count} messages...")
-                                            
-                                            if message_count >= 100:  # Limit for performance
-                                                print(f"Reached message limit ({message_count} messages)")
-                                                break
-                                
-                except EndOfFile:
-                    print(f"Reached end of file. Read {message_count} messages.")
-                except Exception as e:
-                    print(f"Error during message reading: {e}")
+                for schema, channel, message, decoded_msg in reader.iter_decoded_messages():
+                    topic = channel.topic
                     
-                if message_count == 0:
-                    print("No messages could be decoded. Trying alternative approach...")
-                    
-                    # Alternative: Use make_reader with no summary
-                    f.seek(0)
-                    from mcap.reader import make_reader
-                    
-                    try:
-                        # Don't use summary
-                        reader = make_reader(f)
+                    if topics_filter is None or topic in topics_filter:
+                        timestamp = message.publish_time * 1e-9
                         
-                        # Read messages directly
-                        for message in reader.iter_messages(topics=topics_filter):
-                            if isinstance(message, tuple) and len(message) >= 3:
-                                schema, channel, msg = message
-                                topic = channel.topic
-                                timestamp = msg.publish_time * 1e-9
-                                
-                                # Try to decode
-                                try:
-                                    decoder = Ros2DecoderFactory().decoder_for(schema.name, schema.data)
-                                    decoded_msg = decoder(msg.data)
-                                    yield topic, decoded_msg, timestamp
-                                    message_count += 1
-                                except:
-                                    try:
-                                        decoder = Ros1DecoderFactory().decoder_for(schema.name, schema.data)
-                                        decoded_msg = decoder(msg.data)
-                                        yield topic, decoded_msg, timestamp
-                                        message_count += 1
-                                    except:
-                                        pass
-                                
-                                if message_count >= 100:
-                                    break
-                    except Exception as e:
-                        print(f"Alternative approach also failed: {e}")
-                        
+                        if decoded_msg:
+                            yield topic, decoded_msg, timestamp
+                            
         except Exception as e:
-            print(f"Fatal error reading MCAP: {e}")
-            import traceback
-            traceback.print_exc()
-            
-        print(f"Total messages read: {message_count}")
+            print(f"MCAP fallback also failed: {e}")
     
     def close(self):
         pass
@@ -690,9 +648,13 @@ Keyboard:
         camera_info_topics = []
         
         for topic, msg_type in available_topics:
-            # Check for camera image topics
+            # Check for camera image topics - prefer debayered over compressed
             if ('Image' in msg_type or 'image' in topic.lower()) and 'camera_info' not in topic.lower():
-                camera_topics.append(topic)
+                # Prioritize debayered images over compressed images
+                if 'debayered' in topic.lower():
+                    camera_topics.insert(0, topic)  # Insert at beginning for priority
+                elif 'compressed' not in topic.lower():
+                    camera_topics.append(topic)
             # Check for lidar topics
             elif 'PointCloud2' in msg_type or 'lidar' in topic.lower() or 'points' in topic.lower():
                 lidar_topics.append(topic)
@@ -749,16 +711,53 @@ Keyboard:
             # Try to match camera info with selected camera
             if selected_camera:
                 # Look for camera info topic that matches the camera topic pattern
-                camera_base = selected_camera.replace('/image_raw', '').replace('/image', '')
+                camera_base = selected_camera.replace('/image_raw/debayered', '').replace('/image_raw/compressed', '').replace('/image_raw', '').replace('/image', '')
+                print(f"Looking for camera info matching camera base: {camera_base}")
                 for info_topic in camera_info_topics:
+                    print(f"Checking info topic: {info_topic}")
                     if camera_base in info_topic:
                         selected_info = info_topic
+                        print(f"Matched camera info: {selected_info}")
                         break
             if not selected_info:
                 selected_info = camera_info_topics[0]  # Default to first one
+                print(f"No match found, using default: {selected_info}")
         
         return selected_camera, selected_lidar, selected_info
     
+    def find_or_select_calibration_file(self):
+        """Find calibration file automatically or let user select it"""
+        # Common calibration file locations to search
+        search_paths = [
+            "/media/nail/payload3/20250826/calibResults/",
+            "./calibResults/",
+            "../calibResults/",
+            "../../calibResults/",
+            "./",
+        ]
+        
+        # Look for camchain.yaml files
+        for search_path in search_paths:
+            if os.path.exists(search_path):
+                for file in os.listdir(search_path):
+                    if "camchain.yaml" in file and not file.startswith('.'):
+                        full_path = os.path.join(search_path, file)
+                        print(f"Found calibration file: {full_path}")
+                        return full_path
+        
+        # If not found, ask user to select
+        print("Calibration file not found automatically, asking user to select...")
+        calib_file = filedialog.askopenfilename(
+            title="Select Camera Calibration File",
+            filetypes=[("YAML files", "*.yaml"), ("All files", "*.*")],
+            initialdir="/media/nail/payload3/20250826/calibResults/"
+        )
+        
+        if not calib_file:
+            raise ValueError("No calibration file selected")
+            
+        return calib_file
+
     def load_bag(self):
         """Load ROS bag or MCAP file"""
         filepath = filedialog.askopenfilename(
@@ -816,19 +815,105 @@ Keyboard:
             if info_topic:
                 topics_to_read.append(info_topic)
             
-            # Read messages
+            # Read messages with limits for performance
             messages = {}
+            message_count = 0
+            max_messages_per_topic = 50  # Limit messages per topic
+            
+            print(f"Reading messages from topics: {topics_to_read}")
             for topic, msg, t in reader.read_messages(topics_to_read):
                 if topic not in messages:
                     messages[topic] = []
-                messages[topic].append((msg, t))
+                
+                # Limit messages per topic for performance
+                if len(messages[topic]) < max_messages_per_topic:
+                    messages[topic].append((msg, t))
+                    message_count += 1
+                    
+                    if message_count % 10 == 0:
+                        print(f"Read {message_count} messages...")
+                
+                # Stop if we have enough messages for all topics
+                all_topics_have_enough = all(
+                    topic in messages and len(messages[topic]) >= min(10, max_messages_per_topic) 
+                    for topic in topics_to_read
+                )
+                if all_topics_have_enough and message_count > 100:
+                    print(f"Stopping early - collected enough messages ({message_count} total)")
+                    break
             
-            # Extract camera info
-            if info_topic in messages and messages[info_topic]:
-                info_msg = messages[info_topic][0][0]
-                self.camera_matrix = np.array(info_msg.K).reshape(3, 3)
-                self.dist_coeffs = np.array(info_msg.D)
-                self.image_size = (info_msg.width, info_msg.height)
+            print(f"Finished reading {message_count} messages")
+            
+            # Load actual camera calibration parameters from calibration file
+            print(f"Loading camera calibration from calibResults...")
+            
+            # Determine which camera we're using (cam0 or cam1)
+            cam_num = "cam0" if "cam0" in camera_topic else "cam1"
+            print(f"Using camera: {cam_num}")
+            
+            # Load calibration file - try to find it or ask user
+            calib_file = self.find_or_select_calibration_file()
+            
+            try:
+                import yaml
+                with open(calib_file, 'r') as f:
+                    calib_data = yaml.safe_load(f)
+                
+                if cam_num in calib_data:
+                    cam_calib = calib_data[cam_num]
+                    
+                    # Extract intrinsics [fx, fy, cx, cy]
+                    intrinsics = cam_calib['intrinsics']
+                    fx, fy, cx, cy = intrinsics
+                    
+                    # Build camera matrix
+                    self.camera_matrix = np.array([
+                        [fx, 0.0, cx],
+                        [0.0, fy, cy],
+                        [0.0, 0.0, 1.0]
+                    ])
+                    
+                    # Extract distortion coefficients
+                    self.dist_coeffs = np.array(cam_calib['distortion_coeffs'])
+                    
+                    # Extract image resolution
+                    resolution = cam_calib['resolution']
+                    self.image_size = (resolution[0], resolution[1])
+                    
+                    print(f"Loaded calibration for {cam_num}:")
+                    print(f"  Camera matrix:\n{self.camera_matrix}")
+                    print(f"  Distortion coeffs: {self.dist_coeffs}")
+                    print(f"  Image size: {self.image_size}")
+                    
+                else:
+                    raise ValueError(f"Camera {cam_num} not found in calibration file")
+                    
+            except Exception as e:
+                print(f"Error loading calibration file: {e}")
+                print("Falling back to bag camera info...")
+                
+                # Fallback to bag camera info
+                if info_topic in messages and messages[info_topic]:
+                    info_msg = messages[info_topic][0][0]
+                    if hasattr(info_msg, 'width') and hasattr(info_msg, 'height'):
+                        if info_msg.width > 0 and info_msg.height > 0:
+                            self.image_size = (info_msg.width, info_msg.height)
+                        else:
+                            self.image_size = (1224, 1024)  # Default from calib file
+                    else:
+                        self.image_size = (1224, 1024)
+                    
+                    # Use default reasonable camera matrix if bag info is empty
+                    self.camera_matrix = np.array([
+                        [2178.5, 0.0, 673.2],
+                        [0.0, 2036.2, 519.6],
+                        [0.0, 0.0, 1.0]
+                    ])
+                    self.dist_coeffs = np.array([-0.406, 1.521, 0.012, -0.014])
+                    
+                    print(f"Using fallback camera parameters:")
+                    print(f"  Camera matrix:\n{self.camera_matrix}")
+                    print(f"  Image size: {self.image_size}")
             
             # Synchronize frames
             if camera_topic in messages and lidar_topic in messages:
@@ -836,7 +921,7 @@ Keyboard:
                 lidar_msgs = messages[lidar_topic]
                 
                 # Simple synchronization - pair closest timestamps
-                for cam_msg, cam_t in camera_msgs[:20]:  # Limit frames for performance
+                for cam_msg, cam_t in camera_msgs[:10]:  # Limit frames for performance
                     # Find closest lidar message
                     best_lidar = min(lidar_msgs, key=lambda x: abs(x[1] - cam_t))
                     if abs(best_lidar[1] - cam_t) < 0.1:  # 100ms tolerance
@@ -860,39 +945,80 @@ Keyboard:
     def extract_points(self, pc2_msg):
         """Extract xyz points from PointCloud2 message"""
         points = []
-        for point in pc2.read_points(pc2_msg, field_names=("x", "y", "z"), skip_nans=True):
-            points.append([point[0], point[1], point[2]])
-        return np.array(points)
+        try:
+            for point in pc2.read_points(pc2_msg, field_names=("x", "y", "z"), skip_nans=True):
+                points.append([point[0], point[1], point[2]])
+            
+            points_array = np.array(points)
+            print(f"Extracted {len(points_array)} points from point cloud")
+            if len(points_array) > 0:
+                print(f"Point cloud bounds: X[{points_array[:, 0].min():.2f}, {points_array[:, 0].max():.2f}], "
+                      f"Y[{points_array[:, 1].min():.2f}, {points_array[:, 1].max():.2f}], "
+                      f"Z[{points_array[:, 2].min():.2f}, {points_array[:, 2].max():.2f}]")
+            return points_array
+        except Exception as e:
+            print(f"Error extracting points: {e}")
+            return np.array([])
     
     def project_points(self, points_3d):
         """Project 3D points to 2D image plane"""
         if self.camera_matrix is None or len(points_3d) == 0:
+            print("No camera matrix or no points to project")
             return np.array([])
+        
+        print(f"Projecting {len(points_3d)} points with camera matrix shape: {self.camera_matrix.shape}")
+        print(f"Camera matrix:\n{self.camera_matrix}")
+        print(f"Image size: {self.image_size}")
             
         # Apply extrinsic transformation
         points_transformed = (self.rotation @ points_3d.T).T + self.translation
+        print(f"After transformation: {len(points_transformed)} points")
         
-        # Remove points behind camera
-        valid_mask = points_transformed[:, 2] > 0.1
+        # Remove points behind camera - increased range to show more distant points
+        valid_mask = points_transformed[:, 2] > 0.01  # Changed from 0.1 to 0.01 to include closer points
         points_transformed = points_transformed[valid_mask]
+        print(f"After removing points behind camera: {len(points_transformed)} points")
         
         if len(points_transformed) == 0:
+            print("No points in front of camera")
             return np.array([])
         
         # Project to image plane
         points_2d = self.camera_matrix @ points_transformed.T
+        # Avoid division by zero
+        z_coords = points_2d[2]
+        valid_z = np.abs(z_coords) > 1e-6
+        if not np.any(valid_z):
+            print("All points have zero Z coordinate after projection")
+            return np.array([])
+        
+        points_2d = points_2d[:, valid_z]
+        points_transformed = points_transformed[valid_z]
+        
         points_2d = points_2d[:2] / points_2d[2]
         points_2d = points_2d.T
+        print(f"After projection: {len(points_2d)} points")
         
         # Filter points within image bounds
-        valid_mask = (points_2d[:, 0] >= 0) & (points_2d[:, 0] < self.image_size[0]) & \
-                    (points_2d[:, 1] >= 0) & (points_2d[:, 1] < self.image_size[1])
+        if self.image_size:
+            valid_mask = (points_2d[:, 0] >= 0) & (points_2d[:, 0] < self.image_size[0]) & \
+                        (points_2d[:, 1] >= 0) & (points_2d[:, 1] < self.image_size[1])
+            
+            # Add depth for coloring
+            depths = points_transformed[valid_mask, 2]
+            points_2d = points_2d[valid_mask]
+            print(f"After filtering within image bounds: {len(points_2d)} points")
+        else:
+            depths = points_transformed[:, 2]
+            print(f"No image size filtering, keeping all {len(points_2d)} points")
         
-        # Add depth for coloring
-        depths = points_transformed[valid_mask, 2]
-        points_2d = points_2d[valid_mask]
-        
-        return np.column_stack([points_2d, depths])
+        if len(points_2d) > 0:
+            result = np.column_stack([points_2d, depths])
+            print(f"Final projected points: {len(result)} points")
+            return result
+        else:
+            print("No points within image bounds")
+            return np.array([])
     
     def update_display(self):
         """Update the display with current frame and calibration"""
