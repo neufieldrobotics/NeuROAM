@@ -128,7 +128,14 @@ Use the intuitive controls to align the LiDAR points with the camera image:
 
 See the alignment results in real-time as you adjust parameters. The LiDAR points are color-coded by depth for better visualization.
 
-### 5. Save Calibration
+
+### 5. Top-View Preview
+
+![Top-View Preview](demo/pc_top_view.png)
+
+See the top view alignment results in real-time as you adjust parameters. The LiDAR points get updated both in the camera view and top view to help in faster and easier alignement. The LiDAR points are color-coded the same in both views by depth for better visualization.
+
+### 6. Save Calibration
 
 ![Save Results](demo/gui_5.png)
 

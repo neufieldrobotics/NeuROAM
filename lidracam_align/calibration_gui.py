@@ -525,13 +525,29 @@ Keyboard:
         ttk.Label(control_frame, text=instructions, justify=tk.LEFT, 
                  font=('Courier', 9)).pack(pady=20, padx=10)
         
-        # Right panel - Display
-        self.canvas_frame = ttk.Frame(main_frame)
-        self.canvas_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
+        # Right panel - Display (split into camera view and top-down view)
+        self.display_frame = ttk.Frame(main_frame)
+        self.display_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
         
-        # Create canvas for image display
-        self.canvas = tk.Canvas(self.canvas_frame, bg='black')
+        # Create notebook for tabbed views
+        self.notebook = ttk.Notebook(self.display_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Camera view tab
+        self.camera_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.camera_frame, text="Camera View")
+        
+        # Create canvas for camera image display
+        self.canvas = tk.Canvas(self.camera_frame, bg='black')
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # Top-down view tab
+        self.topdown_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.topdown_frame, text="Top-Down View")
+        
+        # Create canvas for top-down point cloud display
+        self.topdown_canvas = tk.Canvas(self.topdown_frame, bg='gray20')
+        self.topdown_canvas.pack(fill=tk.BOTH, expand=True)
         
         # Bind mouse events
         self.canvas.bind("<Button-1>", self.on_mouse_press)
@@ -1068,11 +1084,135 @@ Keyboard:
         self.photo = ImageTk.PhotoImage(image_pil)
         self.canvas.delete("all")
         self.canvas.create_image(canvas_width//2, canvas_height//2, image=self.photo)
+        
+        # Update top-down view
+        self.update_topdown_view()
     
     def update_translation(self, axis, value):
         """Update translation from GUI"""
         self.translation[axis] = value
         self.update_display()
+    
+    def update_topdown_view(self):
+        """Update the top-down point cloud view"""
+        if not self.frames or self.current_frame >= len(self.frames):
+            return
+            
+        # Get current frame points
+        points_3d = self.frames[self.current_frame]['points']
+        if len(points_3d) == 0:
+            return
+            
+        # Apply current transformation
+        points_transformed = (self.rotation @ points_3d.T).T + self.translation
+        
+        # Get canvas dimensions
+        canvas_width = self.topdown_canvas.winfo_width()
+        canvas_height = self.topdown_canvas.winfo_height()
+        
+        if canvas_width <= 1 or canvas_height <= 1:
+            return
+            
+        # Clear canvas
+        self.topdown_canvas.delete("all")
+        
+        # Project to X-Y plane (top-down view)
+        x_coords = points_transformed[:, 0]
+        y_coords = points_transformed[:, 1]
+        z_coords = points_transformed[:, 2]
+        
+        if len(x_coords) == 0:
+            return
+            
+        # Calculate bounds with padding
+        x_min, x_max = x_coords.min(), x_coords.max()
+        y_min, y_max = y_coords.min(), y_coords.max()
+        
+        # Add padding
+        x_range = x_max - x_min
+        y_range = y_max - y_min
+        padding = 0.1
+        x_min -= x_range * padding
+        x_max += x_range * padding
+        y_min -= y_range * padding
+        y_max += y_range * padding
+        
+        # Scale to canvas
+        if x_range > 0 and y_range > 0:
+            scale_x = (canvas_width - 40) / (x_max - x_min)
+            scale_y = (canvas_height - 40) / (y_max - y_min)
+            scale = min(scale_x, scale_y)
+            
+            # Transform coordinates to canvas space
+            canvas_x = (x_coords - x_min) * scale + 20
+            canvas_y = canvas_height - ((y_coords - y_min) * scale + 20)  # Flip Y axis
+            
+            # Color by height (Z coordinate)
+            if len(z_coords) > 0:
+                z_min, z_max = z_coords.min(), z_coords.max()
+                if z_max - z_min > 0:
+                    z_norm = (z_coords - z_min) / (z_max - z_min)
+                else:
+                    z_norm = np.zeros_like(z_coords)
+                
+                # Draw points
+                point_size = max(1, self.point_size_var.get() // 2)
+                
+                for i in range(len(canvas_x)):
+                    # Color based on height
+                    color_val = int(z_norm[i] * 255)
+                    if color_val < 128:
+                        # Blue to green
+                        color = f"#{0:02x}{color_val*2:02x}{255-color_val*2:02x}"
+                    else:
+                        # Green to red
+                        color_val = (color_val - 128) * 2
+                        color = f"#{color_val:02x}{255-color_val:02x}{0:02x}"
+                    
+                    x, y = int(canvas_x[i]), int(canvas_y[i])
+                    self.topdown_canvas.create_oval(
+                        x-point_size, y-point_size, 
+                        x+point_size, y+point_size,
+                        fill=color, outline=""
+                    )
+        
+        # Draw coordinate axes
+        center_x, center_y = canvas_width // 2, canvas_height // 2
+        axis_length = 30
+        
+        # X axis (red)
+        self.topdown_canvas.create_line(
+            center_x, center_y, center_x + axis_length, center_y,
+            fill="red", width=2
+        )
+        self.topdown_canvas.create_text(
+            center_x + axis_length + 10, center_y, text="X", fill="red"
+        )
+        
+        # Y axis (green)
+        self.topdown_canvas.create_line(
+            center_x, center_y, center_x, center_y - axis_length,
+            fill="green", width=2
+        )
+        self.topdown_canvas.create_text(
+            center_x, center_y - axis_length - 10, text="Y", fill="green"
+        )
+        
+        # Add camera position indicator
+        cam_x = (-self.translation[0] - x_min) * scale + 20 if x_range > 0 else center_x
+        cam_y = canvas_height - ((-self.translation[1] - y_min) * scale + 20) if y_range > 0 else center_y
+        
+        # Draw camera as triangle
+        cam_size = 8
+        self.topdown_canvas.create_polygon(
+            cam_x, cam_y - cam_size,
+            cam_x - cam_size, cam_y + cam_size,
+            cam_x + cam_size, cam_y + cam_size,
+            fill="yellow", outline="black", width=2
+        )
+        self.topdown_canvas.create_text(
+            cam_x, cam_y + cam_size + 15, text="Camera", fill="yellow"
+        )
     
     def update_rotation(self, axis, value):
         """Update rotation from GUI"""
