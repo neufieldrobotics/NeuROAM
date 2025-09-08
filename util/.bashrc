@@ -176,8 +176,9 @@ echo "REMINDERS!!"
 echo "    [UPDATE ENVIRONMENT] run the command 'src-update' once to make sure you have the most up-to-date .bashrc file."
 echo "    [UPDATE MAIN REPO] make sure that ~/NeuROAM is on the 'main' branch and use 'git pull' to make sure code is up to date"
 echo "    [UPDATE SUBMODULES] make sure that all submodules in NeuROAM are up to date 'cd ~/NeuROAM; git pull --recurse-submodules'"
-echo "    [CHECK STORAGE] run `df -h` to check if you have enough storage space on your system. If not, delete some files or move them to an external drive."
+echo "    [CHECK STORAGE] check if you have enough storage space on your system. If not, delete some files or move them to an external drive."
 echo ""
+df -h
 
 
 #!!!!!! NOTE: MAKE SURE YOU CHANGE THE FILE IN ~/NeuROAM/util/.bashrc
