@@ -1,0 +1,86 @@
+# Define which topics belong to each sensor group
+# Modify these lists based on your specific setup and requirements
+
+camera:
+  description: "Camera sensor topics including compressed and debayered"
+  topics:
+    # Original compressed topics
+    - /cam_sync/cam0/image_raw/compressed
+    - /cam_sync/cam1/image_raw/compressed
+    # Camera info topics
+    - /cam_sync/cam0/camera_info
+    - /cam_sync/cam1/camera_info
+    # Debayered topics (will be added if processing)
+    - /cam_sync/cam0/image_raw/debayered
+    - /cam_sync/cam1/image_raw/debayered
+    # Any other camera-related topics
+    - /camera/image_raw
+    - /cam_sync/cam1/meta
+    - /cam_sync/cam0/meta
+
+lidar:
+  description: "Ouster LIDAR sensor topics"
+  topics:
+    # Ouster point cloud topics
+    - /ouster/points
+    - /ouster/range_image
+    - /ouster/nearir_image
+    - /ouster/reflec_image
+    - /ouster/signal_image
+    # Ouster metadata and IMU
+    - /ouster/metadata
+    - /ouster/imu
+
+imu:
+  description: "VectorNav IMU sensor topics"
+  topics:
+    # VectorNav IMU topics
+    - /vectornav/imu
+    - /vectornav/raw/common
+    - /vectornav/raw/time
+    - /vectornav/time_startup
+    - /vectornav/time_gps
+    - /vectornav/raw/imu
+    - /vectornav/time_syncin
+    - /vectornav/raw/gps
+    - /vectornav/time_pps
+    - /vectornav/imu
+    - /vectornav/gnss
+    - /vectornav/raw/attitude
+    - /vectornav/imu_uncompensated
+    - /vectornav/raw/ins
+    - /vectornav/magnetic
+    - /vectornav/raw/gps2
+    - /vectornav/velocity_aiding
+    - /vectornav/temperature
+    - /vectornav/pressure
+    - /vectornav/velocity_body
+    - /vectornav/pose
+
+gps:
+  description: "Ublox GPS sensor topics"
+  topics:
+    # Ublox GPS topics
+    - /ublox_gps_node/fix
+    - /ublox_gps_node/fix_velocity
+    - /ublox_gps_node/navpvt
+    - /ublox_gps_node/navsat
+    - /ublox_gps_node/navstatus
+    - /ublox_gps_node/time_ref
+
+
+# Additional topics that are always included (system topics)
+always_include:
+  description: "Topics that are always included regardless of sensor selection"
+  topics:
+    - /rosout
+    - /tf
+    - /tf_static
+    - /robot_description
+    - /joint_states
+
+# Topic patterns that should be excluded (regex patterns)
+exclude_patterns:
+  - ".*debug.*"
+  - ".*test.*"
+
