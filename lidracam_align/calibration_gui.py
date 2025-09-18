@@ -463,31 +463,49 @@ class CalibrationGUI:
         ttk.Label(control_frame, text="Translation (m):", font=('Arial', 10, 'bold')).pack(pady=5)
         
         self.trans_vars = {}
+        self.trans_entries = {}
         for i, axis in enumerate(['X', 'Y', 'Z']):
             frame = ttk.Frame(control_frame)
             frame.pack(fill=tk.X, padx=10, pady=2)
             ttk.Label(frame, text=f"{axis}:", width=3).pack(side=tk.LEFT)
             var = tk.DoubleVar(value=0.0)
             self.trans_vars[axis] = var
+            
+            # Text entry field
+            entry = ttk.Entry(frame, textvariable=var, width=8)
+            entry.pack(side=tk.LEFT, padx=(0, 5))
+            entry.bind('<Return>', lambda e, a=i: self.update_translation_from_entry(a))
+            entry.bind('<FocusOut>', lambda e, a=i: self.update_translation_from_entry(a))
+            self.trans_entries[axis] = entry
+            
+            # Slider
             scale = ttk.Scale(frame, from_=-5.0, to=5.0, variable=var, 
                             command=lambda v, a=i: self.update_translation(a, float(v)))
             scale.pack(side=tk.LEFT, fill=tk.X, expand=True)
-            ttk.Label(frame, textvariable=var, width=8).pack(side=tk.LEFT)
         
         # Rotation controls
         ttk.Label(control_frame, text="Rotation (degrees):", font=('Arial', 10, 'bold')).pack(pady=(20, 5))
         
         self.rot_vars = {}
+        self.rot_entries = {}
         for i, axis in enumerate(['Roll', 'Pitch', 'Yaw']):
             frame = ttk.Frame(control_frame)
             frame.pack(fill=tk.X, padx=10, pady=2)
             ttk.Label(frame, text=f"{axis}:", width=5).pack(side=tk.LEFT)
             var = tk.DoubleVar(value=0.0)
             self.rot_vars[axis] = var
+            
+            # Text entry field
+            entry = ttk.Entry(frame, textvariable=var, width=8)
+            entry.pack(side=tk.LEFT, padx=(0, 5))
+            entry.bind('<Return>', lambda e, a=i: self.update_rotation_from_entry(a))
+            entry.bind('<FocusOut>', lambda e, a=i: self.update_rotation_from_entry(a))
+            self.rot_entries[axis] = entry
+            
+            # Slider
             scale = ttk.Scale(frame, from_=-180, to=180, variable=var,
                             command=lambda v, a=i: self.update_rotation(a, float(v)))
             scale.pack(side=tk.LEFT, fill=tk.X, expand=True)
-            ttk.Label(frame, textvariable=var, width=8).pack(side=tk.LEFT)
         
         # Frame navigation
         ttk.Label(control_frame, text="Frame Navigation:", font=('Arial', 10, 'bold')).pack(pady=(20, 5))
@@ -498,6 +516,46 @@ class CalibrationGUI:
         self.frame_label = ttk.Label(nav_frame, text="0/0")
         self.frame_label.pack(side=tk.LEFT, padx=10)
         ttk.Button(nav_frame, text=">>", command=self.next_frame).pack(side=tk.LEFT, padx=2)
+        
+        # Rolling ball interface
+        ttk.Label(control_frame, text="Rolling Ball Control:", font=('Arial', 10, 'bold')).pack(pady=(20, 5))
+        
+        # Create rolling ball canvas
+        self.rolling_ball_frame = ttk.Frame(control_frame)
+        self.rolling_ball_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.rolling_ball_canvas = tk.Canvas(self.rolling_ball_frame, width=120, height=120, bg='gray90')
+        self.rolling_ball_canvas.pack()
+        
+        # Initialize rolling ball state
+        self.ball_center = (60, 60)
+        self.ball_radius = 50
+        self.ball_pressed = False
+        self.ball_last_pos = None
+        
+        # Draw the rolling ball
+        self.draw_rolling_ball()
+        
+        # Bind rolling ball events
+        self.rolling_ball_canvas.bind("<Button-1>", self.on_ball_press)
+        self.rolling_ball_canvas.bind("<B1-Motion>", self.on_ball_drag)
+        self.rolling_ball_canvas.bind("<ButtonRelease-1>", self.on_ball_release)
+        
+        # Add coordinate system info
+        coord_info_frame = ttk.Frame(control_frame)
+        coord_info_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        coord_info = ttk.Label(coord_info_frame, text="Coordinate Systems:\nLiDAR: X=forward, Y=left, Z=up\nCamera: X=right, Y=down, Z=forward", 
+                              font=('Courier', 8), justify=tk.LEFT)
+        coord_info.pack()
+        
+        # Heuristic center matching
+        ttk.Label(control_frame, text="Auto Alignment:", font=('Arial', 10, 'bold')).pack(pady=(20, 5))
+        auto_frame = ttk.Frame(control_frame)
+        auto_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Button(auto_frame, text="Match Centers", command=self.match_centers_heuristic).pack(side=tk.LEFT, padx=2)
+        ttk.Button(auto_frame, text="Auto Z-Align", command=self.auto_z_align).pack(side=tk.LEFT, padx=2)
         
         # Point size control
         ttk.Label(control_frame, text="Point Size:", font=('Arial', 10, 'bold')).pack(pady=(20, 5))
@@ -977,42 +1035,61 @@ Keyboard:
             return np.array([])
     
     def project_points(self, points_3d):
-        """Project 3D points to 2D image plane"""
+        """Project 3D points to 2D image plane using proper coordinate transformations"""
         if self.camera_matrix is None or len(points_3d) == 0:
             print("No camera matrix or no points to project")
             return np.array([])
         
-        print(f"Projecting {len(points_3d)} points with camera matrix shape: {self.camera_matrix.shape}")
-        print(f"Camera matrix:\n{self.camera_matrix}")
-        print(f"Image size: {self.image_size}")
-            
-        # Apply extrinsic transformation
-        points_transformed = (self.rotation @ points_3d.T).T + self.translation
-        print(f"After transformation: {len(points_transformed)} points")
+        print(f"Projecting {len(points_3d)} points")
         
-        # Remove points behind camera - increased range to show more distant points
-        valid_mask = points_transformed[:, 2] > 0.01  # Changed from 0.1 to 0.01 to include closer points
-        points_transformed = points_transformed[valid_mask]
-        print(f"After removing points behind camera: {len(points_transformed)} points")
+        # Create 4x4 transformation matrix (LiDAR to Camera)
+        # Standard convention: T = [R t; 0 1] where R is 3x3 rotation, t is 3x1 translation
+        T_lidar_to_camera = np.eye(4)
+        T_lidar_to_camera[:3, :3] = self.rotation
+        T_lidar_to_camera[:3, 3] = self.translation
         
-        if len(points_transformed) == 0:
+        print(f"Transformation matrix (LiDAR->Camera):\n{T_lidar_to_camera}")
+        
+        # Convert points to homogeneous coordinates
+        points_homogeneous = np.hstack([points_3d, np.ones((len(points_3d), 1))])
+        
+        # Apply transformation: P_camera = T * P_lidar
+        points_camera = (T_lidar_to_camera @ points_homogeneous.T).T
+        points_camera = points_camera[:, :3]  # Convert back to 3D
+        
+        print(f"After transformation: {len(points_camera)} points")
+        if len(points_camera) > 0:
+            print(f"Camera frame bounds: X[{points_camera[:, 0].min():.2f}, {points_camera[:, 0].max():.2f}], "
+                  f"Y[{points_camera[:, 1].min():.2f}, {points_camera[:, 1].max():.2f}], "
+                  f"Z[{points_camera[:, 2].min():.2f}, {points_camera[:, 2].max():.2f}]")
+        
+        # Remove points behind camera (Z <= 0 in camera coordinates)
+        # Camera coordinate system: X=right, Y=down, Z=forward
+        valid_mask = points_camera[:, 2] > 0.1  # Points must be in front of camera
+        points_camera = points_camera[valid_mask]
+        print(f"After removing points behind camera: {len(points_camera)} points")
+        
+        if len(points_camera) == 0:
             print("No points in front of camera")
             return np.array([])
         
-        # Project to image plane
-        points_2d = self.camera_matrix @ points_transformed.T
+        # Project to image plane using pinhole camera model
+        # P_image = K * P_camera where K is camera intrinsic matrix
+        points_2d_homogeneous = self.camera_matrix @ points_camera.T
+        
         # Avoid division by zero
-        z_coords = points_2d[2]
+        z_coords = points_2d_homogeneous[2]
         valid_z = np.abs(z_coords) > 1e-6
         if not np.any(valid_z):
             print("All points have zero Z coordinate after projection")
             return np.array([])
         
-        points_2d = points_2d[:, valid_z]
-        points_transformed = points_transformed[valid_z]
+        points_2d_homogeneous = points_2d_homogeneous[:, valid_z]
+        points_camera = points_camera[valid_z]
         
-        points_2d = points_2d[:2] / points_2d[2]
-        points_2d = points_2d.T
+        # Convert from homogeneous to 2D image coordinates
+        points_2d = points_2d_homogeneous[:2] / points_2d_homogeneous[2]
+        points_2d = points_2d.T  # Shape: (N, 2)
         print(f"After projection: {len(points_2d)} points")
         
         # Filter points within image bounds
@@ -1020,12 +1097,12 @@ Keyboard:
             valid_mask = (points_2d[:, 0] >= 0) & (points_2d[:, 0] < self.image_size[0]) & \
                         (points_2d[:, 1] >= 0) & (points_2d[:, 1] < self.image_size[1])
             
-            # Add depth for coloring
-            depths = points_transformed[valid_mask, 2]
+            # Add depth for coloring (Z coordinate in camera frame)
+            depths = points_camera[valid_mask, 2]
             points_2d = points_2d[valid_mask]
             print(f"After filtering within image bounds: {len(points_2d)} points")
         else:
-            depths = points_transformed[:, 2]
+            depths = points_camera[:, 2]
             print(f"No image size filtering, keeping all {len(points_2d)} points")
         
         if len(points_2d) > 0:
@@ -1092,6 +1169,20 @@ Keyboard:
         """Update translation from GUI"""
         self.translation[axis] = value
         self.update_display()
+    
+    def update_translation_from_entry(self, axis):
+        """Update translation from text entry field"""
+        try:
+            axis_names = ['X', 'Y', 'Z']
+            axis_name = axis_names[axis]
+            value = self.trans_vars[axis_name].get()
+            self.translation[axis] = value
+            self.update_display()
+        except (ValueError, tk.TclError):
+            # Reset to current value if invalid input
+            axis_names = ['X', 'Y', 'Z']
+            axis_name = axis_names[axis]
+            self.trans_vars[axis_name].set(self.translation[axis])
     
     def update_topdown_view(self):
         """Update the top-down point cloud view"""
@@ -1237,6 +1328,36 @@ Keyboard:
         self.rotation = R_z @ R_y @ R_x
         self.update_display()
     
+    def update_rotation_from_entry(self, axis):
+        """Update rotation from text entry field"""
+        try:
+            axis_names = ['Roll', 'Pitch', 'Yaw']
+            axis_name = axis_names[axis]
+            value = self.rot_vars[axis_name].get()
+            # Clamp to valid range
+            value = max(-180, min(180, value))
+            self.rot_vars[axis_name].set(value)
+            self.update_rotation(axis, value)
+        except (ValueError, tk.TclError):
+            # Reset to current value if invalid input
+            axis_names = ['Roll', 'Pitch', 'Yaw']
+            axis_name = axis_names[axis]
+            # Convert current rotation matrix back to Euler angles
+            sy = np.sqrt(self.rotation[0, 0]**2 + self.rotation[1, 0]**2)
+            singular = sy < 1e-6
+            
+            if not singular:
+                x = np.arctan2(self.rotation[2, 1], self.rotation[2, 2])
+                y = np.arctan2(-self.rotation[2, 0], sy)
+                z = np.arctan2(self.rotation[1, 0], self.rotation[0, 0])
+            else:
+                x = np.arctan2(-self.rotation[1, 2], self.rotation[1, 1])
+                y = np.arctan2(-self.rotation[2, 0], sy)
+                z = 0
+            
+            angles_deg = [np.rad2deg(x), np.rad2deg(y), np.rad2deg(z)]
+            self.rot_vars[axis_name].set(angles_deg[axis])
+    
     def translate_by(self, dx, dy, dz):
         """Translate by relative amount"""
         self.translation += np.array([dx, dy, dz])
@@ -1305,6 +1426,304 @@ Keyboard:
             self.translate_by(0, 0, -0.1)
         elif event.num == 5 or event.delta < 0:
             self.translate_by(0, 0, 0.1)
+    
+    def draw_rolling_ball(self):
+        """Draw the rolling ball interface"""
+        self.rolling_ball_canvas.delete("all")
+        
+        # Draw outer circle
+        x, y = self.ball_center
+        r = self.ball_radius
+        self.rolling_ball_canvas.create_oval(
+            x - r, y - r, x + r, y + r,
+            outline="black", width=2, fill="lightblue"
+        )
+        
+        # Draw grid lines
+        for i in range(-2, 3):
+            # Vertical lines
+            line_x = x + i * r // 4
+            if x - r < line_x < x + r:
+                y_offset = np.sqrt(r**2 - (line_x - x)**2)
+                self.rolling_ball_canvas.create_line(
+                    line_x, y - y_offset, line_x, y + y_offset,
+                    fill="gray", width=1
+                )
+            
+            # Horizontal lines
+            line_y = y + i * r // 4
+            if y - r < line_y < y + r:
+                x_offset = np.sqrt(r**2 - (line_y - y)**2)
+                self.rolling_ball_canvas.create_line(
+                    x - x_offset, line_y, x + x_offset, line_y,
+                    fill="gray", width=1
+                )
+        
+        # Draw center point
+        self.rolling_ball_canvas.create_oval(
+            x - 3, y - 3, x + 3, y + 3,
+            fill="red", outline="darkred"
+        )
+        
+        # Draw current rotation indicator
+        current_roll = np.deg2rad(self.rot_vars['Roll'].get())
+        current_pitch = np.deg2rad(self.rot_vars['Pitch'].get())
+        
+        # Map rotation to ball position
+        ball_x = x + current_pitch * r / (np.pi / 2)
+        ball_y = y - current_roll * r / (np.pi / 2)
+        
+        # Clamp to circle
+        dx = ball_x - x
+        dy = ball_y - y
+        dist = np.sqrt(dx**2 + dy**2)
+        if dist > r - 5:
+            scale = (r - 5) / dist
+            ball_x = x + dx * scale
+            ball_y = y + dy * scale
+        
+        # Draw rotation indicator
+        self.rolling_ball_canvas.create_oval(
+            ball_x - 5, ball_y - 5, ball_x + 5, ball_y + 5,
+            fill="orange", outline="darkorange", width=2
+        )
+    
+    def on_ball_press(self, event):
+        """Handle rolling ball press"""
+        self.ball_pressed = True
+        self.ball_last_pos = (event.x, event.y)
+    
+    def on_ball_release(self, event):
+        """Handle rolling ball release"""
+        self.ball_pressed = False
+        self.ball_last_pos = None
+    
+    def on_ball_drag(self, event):
+        """Handle rolling ball drag"""
+        if not self.ball_pressed or not self.ball_last_pos:
+            return
+        
+        # Calculate movement delta from last position
+        dx = event.x - self.ball_last_pos[0]
+        dy = event.y - self.ball_last_pos[1]
+        
+        # Convert to rotation angles with sensitivity control
+        sensitivity = 0.5  # Adjust sensitivity
+        pitch_delta = dx * sensitivity
+        roll_delta = -dy * sensitivity  # Negative for intuitive control
+        
+        # Update rotation variables
+        current_pitch = self.rot_vars['Pitch'].get()
+        current_roll = self.rot_vars['Roll'].get()
+        
+        new_pitch = max(-180, min(180, current_pitch + pitch_delta))
+        new_roll = max(-180, min(180, current_roll + roll_delta))
+        
+        self.rot_vars['Pitch'].set(new_pitch)
+        self.rot_vars['Roll'].set(new_roll)
+        
+        # Update rotation matrix
+        self.update_rotation(0, 0)
+        
+        # Update last position
+        self.ball_last_pos = (event.x, event.y)
+        
+        # Redraw ball
+        self.draw_rolling_ball()
+    
+    def match_centers_heuristic(self):
+        """Improved heuristic center matching using proper coordinate systems"""
+        if not self.frames or self.current_frame >= len(self.frames):
+            messagebox.showwarning("Warning", "No frame data available")
+            return
+        
+        points_3d = self.frames[self.current_frame]['points']
+        if len(points_3d) == 0:
+            messagebox.showwarning("Warning", "No point cloud data available")
+            return
+        
+        try:
+            print(f"\n=== CENTER MATCHING HEURISTIC ===")
+            print(f"Point cloud stats: {len(points_3d)} points")
+            print(f"LiDAR frame bounds: X[{points_3d[:, 0].min():.2f}, {points_3d[:, 0].max():.2f}], "
+                  f"Y[{points_3d[:, 1].min():.2f}, {points_3d[:, 1].max():.2f}], "
+                  f"Z[{points_3d[:, 2].min():.2f}, {points_3d[:, 2].max():.2f}]")
+            
+            # Filter points to reasonable range (remove outliers)
+            # Typical automotive LiDAR range: 0.5m to 100m
+            distances = np.linalg.norm(points_3d, axis=1)
+            valid_mask = (distances > 0.5) & (distances < 100) & \
+                        (np.abs(points_3d[:, 0]) < 50) & (np.abs(points_3d[:, 1]) < 50)
+            filtered_points = points_3d[valid_mask]
+            
+            if len(filtered_points) < 100:
+                messagebox.showwarning("Warning", "Not enough valid points for alignment")
+                return
+            
+            print(f"After filtering: {len(filtered_points)} points")
+            
+            # Calculate robust centroid using median (less sensitive to outliers)
+            centroid = np.median(filtered_points, axis=0)
+            print(f"LiDAR centroid: [{centroid[0]:.3f}, {centroid[1]:.3f}, {centroid[2]:.3f}]")
+            
+            if self.camera_matrix is not None and self.image_size is not None:
+                # Estimate initial transformation based on typical sensor setup
+                # Common LiDAR-camera setup: LiDAR on top, camera below/forward
+                
+                # Estimate viewing distance (median distance to points)
+                viewing_distance = np.median(np.linalg.norm(filtered_points, axis=1))
+                print(f"Estimated viewing distance: {viewing_distance:.2f}m")
+                
+                # Initial guess for transformation
+                # Assume camera is looking forward (positive Z in camera frame)
+                # and LiDAR coordinate system needs to be aligned
+                
+                # Translation: move LiDAR origin to camera position
+                # Camera typically positioned to view the scene center
+                self.translation = np.array([
+                    -centroid[0] * 0.1,  # Small X adjustment
+                    -centroid[1] * 0.1,  # Small Y adjustment  
+                    viewing_distance * 0.3  # Position camera to view the scene
+                ])
+                
+                # Initial rotation: align coordinate systems
+                # Common setup: LiDAR Z-up, Camera Z-forward
+                # Apply small initial rotation to align better
+                initial_pitch = -5.0  # degrees, camera looking slightly down
+                initial_yaw = 0.0
+                initial_roll = 0.0
+                
+                self.rot_vars['Roll'].set(initial_roll)
+                self.rot_vars['Pitch'].set(initial_pitch)
+                self.rot_vars['Yaw'].set(initial_yaw)
+                
+                # Update rotation matrix
+                self.update_rotation(0, 0)
+                
+                print(f"Applied initial transformation:")
+                print(f"  Translation: [{self.translation[0]:.3f}, {self.translation[1]:.3f}, {self.translation[2]:.3f}]")
+                print(f"  Rotation (RPY): [{initial_roll:.1f}, {initial_pitch:.1f}, {initial_yaw:.1f}] degrees")
+                
+                # Update GUI
+                for i, axis in enumerate(['X', 'Y', 'Z']):
+                    self.trans_vars[axis].set(self.translation[i])
+                
+                self.update_display()
+                self.draw_rolling_ball()
+                
+                messagebox.showinfo("Success", 
+                    f"Initial alignment applied:\n"
+                    f"Translation: [{self.translation[0]:.2f}, {self.translation[1]:.2f}, {self.translation[2]:.2f}]\n"
+                    f"Rotation: [{initial_roll:.1f}°, {initial_pitch:.1f}°, {initial_yaw:.1f}°]\n\n"
+                    f"Fine-tune using sliders or rolling ball control.")
+            else:
+                messagebox.showerror("Error", "Camera calibration data not available")
+                
+        except Exception as e:
+            print(f"Error in match_centers_heuristic: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("Error", f"Failed to match centers: {str(e)}")
+    
+    def auto_z_align(self):
+        """Automatically align Z-axis based on ground plane detection"""
+        if not self.frames or self.current_frame >= len(self.frames):
+            messagebox.showwarning("Warning", "No frame data available")
+            return
+        
+        points_3d = self.frames[self.current_frame]['points']
+        if len(points_3d) == 0:
+            messagebox.showwarning("Warning", "No point cloud data available")
+            return
+        
+        try:
+            print(f"Auto Z-align: Processing {len(points_3d)} points")
+            
+            # Filter points to reasonable range
+            valid_mask = (np.abs(points_3d[:, 0]) < 50) & (np.abs(points_3d[:, 1]) < 50) & (points_3d[:, 2] > -10) & (points_3d[:, 2] < 50)
+            filtered_points = points_3d[valid_mask]
+            
+            if len(filtered_points) < 50:
+                messagebox.showwarning("Warning", "Not enough valid points for Z-alignment")
+                return
+            
+            print(f"After filtering: {len(filtered_points)} points")
+            
+            # Simple approach: align with the dominant horizontal plane
+            # Use PCA to find the dominant plane
+            centered_points = filtered_points - np.mean(filtered_points, axis=0)
+            
+            # Compute covariance matrix
+            cov_matrix = np.cov(centered_points.T)
+            
+            # Find eigenvectors (principal components)
+            eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+            
+            # The eigenvector with smallest eigenvalue is the normal to the dominant plane
+            normal_idx = np.argmin(eigenvalues)
+            plane_normal = eigenvectors[:, normal_idx]
+            
+            # Ensure normal points upward (positive Z component)
+            if plane_normal[2] < 0:
+                plane_normal = -plane_normal
+            
+            print(f"Detected plane normal: [{plane_normal[0]:.3f}, {plane_normal[1]:.3f}, {plane_normal[2]:.3f}]")
+            
+            # Calculate rotation to align normal with Z-axis
+            target_normal = np.array([0, 0, 1])
+            
+            # Calculate rotation axis and angle
+            rotation_axis = np.cross(plane_normal, target_normal)
+            rotation_angle = np.arccos(np.clip(np.dot(plane_normal, target_normal), -1, 1))
+            
+            print(f"Rotation angle: {np.rad2deg(rotation_angle):.2f} degrees")
+            
+            if rotation_angle > 0.01:  # Only apply if significant rotation needed
+                if np.linalg.norm(rotation_axis) > 1e-6:
+                    rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
+                    
+                    # Convert to rotation matrix using Rodrigues' formula
+                    K = np.array([[0, -rotation_axis[2], rotation_axis[1]],
+                                 [rotation_axis[2], 0, -rotation_axis[0]],
+                                 [-rotation_axis[1], rotation_axis[0], 0]])
+                    
+                    R_align = np.eye(3) + np.sin(rotation_angle) * K + (1 - np.cos(rotation_angle)) * np.dot(K, K)
+                    
+                    # Apply rotation
+                    self.rotation = R_align @ self.rotation
+                    
+                    # Convert back to Euler angles for GUI
+                    sy = np.sqrt(self.rotation[0, 0]**2 + self.rotation[1, 0]**2)
+                    singular = sy < 1e-6
+                    
+                    if not singular:
+                        x = np.arctan2(self.rotation[2, 1], self.rotation[2, 2])
+                        y = np.arctan2(-self.rotation[2, 0], sy)
+                        z = np.arctan2(self.rotation[1, 0], self.rotation[0, 0])
+                    else:
+                        x = np.arctan2(-self.rotation[1, 2], self.rotation[1, 1])
+                        y = np.arctan2(-self.rotation[2, 0], sy)
+                        z = 0
+                    
+                    self.rot_vars['Roll'].set(np.rad2deg(x))
+                    self.rot_vars['Pitch'].set(np.rad2deg(y))
+                    self.rot_vars['Yaw'].set(np.rad2deg(z))
+                    
+                    print(f"Applied rotation: Roll={np.rad2deg(x):.2f}, Pitch={np.rad2deg(y):.2f}, Yaw={np.rad2deg(z):.2f}")
+                    
+                    self.update_display()
+                    self.draw_rolling_ball()
+                    messagebox.showinfo("Success", f"Z-axis aligned with dominant plane (rotated {np.rad2deg(rotation_angle):.1f}°)")
+                else:
+                    messagebox.showinfo("Info", "Plane normal is already aligned with Z-axis")
+            else:
+                messagebox.showinfo("Info", "Plane already well-aligned with Z-axis")
+                
+        except Exception as e:
+            print(f"Error in auto_z_align: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("Error", f"Failed to auto-align Z-axis: {str(e)}")
     
     def next_frame(self):
         """Go to next frame"""
@@ -1403,6 +1822,9 @@ Keyboard:
             # Update GUI
             for i, axis in enumerate(['X', 'Y', 'Z']):
                 self.trans_vars[axis].set(self.translation[i])
+        
+            # Update rolling ball display
+            self.draw_rolling_ball()
             
             # Convert rotation matrix to Euler angles
             sy = np.sqrt(self.rotation[0, 0]**2 + self.rotation[1, 0]**2)
