@@ -110,17 +110,68 @@ data/
 
 ![Manual Alignment](demo/gui_3.png)
 
-Use the intuitive controls to align the LiDAR points with the camera image:
+The calibration GUI provides multiple intuitive methods to align LiDAR points with camera images:
 
-- **Mouse Controls:**
-  - Left click + drag: Translate the point cloud
-  - Right click + drag: Rotate the point cloud
-  - Mouse wheel: Zoom in/out
+#### **Quick Start Alignment**
 
-- **Parameter Controls:**
-  - Translation sliders: Fine-tune X, Y, Z translation
-  - Rotation sliders: Adjust Roll, Pitch, Yaw angles
-  - Point size: Change visualization point size
+1. **Match Centers Button**: Click this first for an intelligent initial alignment
+   - Automatically estimates the best starting position
+   - Aligns LiDAR and camera coordinate centroids
+   - Applies realistic initial rotation (camera looking slightly down)
+   - Provides a good baseline for manual fine-tuning
+
+2. **Auto Z-Align Button**: Use for ground plane alignment
+   - Automatically detects the ground plane in LiDAR data
+   - Aligns the ground plane with the camera's horizontal axis
+   - Useful for automotive and outdoor scenarios
+
+#### **Manual Alignment Controls**
+
+**Mouse Controls (Rolling Ball Interface):**
+- **Left click + drag**: Translate the point cloud in X/Y directions
+- **Right click + drag**: Rotate the point cloud (intuitive rolling ball rotation)
+- **Mouse wheel**: Zoom in/out for detailed alignment
+- **Shift + mouse wheel**: Translate in Z direction (depth)
+
+**Text Input Controls (Precise Values):**
+- **Translation fields**: Enter exact X, Y, Z translation values in meters
+- **Rotation fields**: Enter exact Roll, Pitch, Yaw angles in degrees
+- **Real-time updates**: Changes apply immediately as you type
+- **Range**: Translation ±10m, Rotation ±180°
+
+**Slider Controls (Fine-tuning):**
+- **Translation sliders**: Fine-tune X, Y, Z translation with visual feedback
+- **Rotation sliders**: Adjust Roll, Pitch, Yaw angles smoothly
+- **Point size slider**: Change visualization point size (1-10 pixels)
+- **Smooth operation**: Continuous updates during slider movement
+
+#### **Coordinate System Reference**
+
+The tool displays coordinate system information to help with alignment:
+
+**LiDAR Coordinate System:**
+- X: Forward (red arrow)
+- Y: Left (green arrow) 
+- Z: Up (blue arrow)
+
+**Camera Coordinate System:**
+- X: Right
+- Y: Down
+- Z: Forward (into the scene)
+
+#### **Alignment Strategy**
+
+**Recommended workflow:**
+1. **Start with "Match Centers"** - Gets you ~80% aligned
+2. **Use mouse controls** for coarse adjustments
+3. **Fine-tune with sliders** for precise alignment
+4. **Use text inputs** for exact values if needed
+5. **Apply "Auto Z-Align"** if ground plane alignment is important
+
+**Visual Feedback:**
+- Points are color-coded by depth (blue=close, red=far)
+- Real-time projection shows alignment quality
+- Point count indicator shows how many points are visible
 
 ### 4. Real-time Preview
 
@@ -129,17 +180,70 @@ Use the intuitive controls to align the LiDAR points with the camera image:
 See the alignment results in real-time as you adjust parameters. The LiDAR points are color-coded by depth for better visualization.
 
 
-### 5. Top-View Preview
+### 5. Dual-View Visualization
 
 ![Top-View Preview](demo/pc_top_view.png)
 
-See the top view alignment results in real-time as you adjust parameters. The LiDAR points get updated both in the camera view and top view to help in faster and easier alignement. The LiDAR points are color-coded the same in both views by depth for better visualization.
+The GUI provides two synchronized views for comprehensive alignment verification:
+
+#### **Camera View (Main Panel)**
+- Shows LiDAR points projected onto the camera image
+- Color-coded by depth (blue=close, red=far)
+- Real-time updates during alignment adjustments
+- Point count display shows alignment quality
+
+#### **Top-View Panel (Bird's Eye)**
+- Bird's eye view of the LiDAR point cloud
+- Same color coding as camera view for consistency
+- Helps understand 3D spatial relationships
+- Useful for verifying translation and rotation in the horizontal plane
+- Updates synchronously with camera view
+
+**Benefits of Dual-View:**
+- **Faster alignment**: See both perspectives simultaneously
+- **Better spatial understanding**: Understand 3D transformations intuitively
+- **Quality verification**: Cross-check alignment from multiple viewpoints
+- **Easier debugging**: Identify alignment issues quickly
 
 ### 6. Save Calibration
 
 ![Save Results](demo/gui_5.png)
 
 Once satisfied with the alignment, click "Save Calibration" to export your results in JSON or YAML format.
+
+## Advanced Features
+
+### **Transformation Matrix Output**
+
+The tool displays the complete 4x4 transformation matrix in real-time:
+```
+Transformation matrix (LiDAR->Camera):
+[[ 0.99862953  0.0516182   0.00863792  0.28929063]
+ [ 0.          0.16504761 -0.9862856  -0.25641026]
+ [-0.05233596  0.98493393  0.16482141  0.25641026]
+ [ 0.          0.          0.          1.        ]]
+```
+
+This matrix represents the transformation from LiDAR coordinates to camera coordinates using the standard format:
+- **Rotation (3x3)**: Upper-left block containing the rotation matrix
+- **Translation (3x1)**: Right column containing X, Y, Z translation
+- **Homogeneous**: Bottom row [0, 0, 0, 1] for proper matrix operations
+
+### **Real-time Feedback**
+
+The GUI provides continuous feedback during alignment:
+- **Point count**: Shows how many LiDAR points are visible in the camera view
+- **Coordinate bounds**: Displays the spatial extent of transformed points
+- **Transformation details**: Live updates of rotation and translation parameters
+- **Visual indicators**: Color-coded points and coordinate system references
+
+### **Robust Point Processing**
+
+The tool implements several filtering stages for optimal performance:
+1. **Distance filtering**: Removes points beyond typical sensor ranges (0.5-100m)
+2. **Behind-camera filtering**: Excludes points with negative Z coordinates
+3. **Image bounds filtering**: Only shows points within the camera's field of view
+4. **Outlier removal**: Filters extreme values that could skew alignment
 
 ## Output Format
 
@@ -268,6 +372,56 @@ rosbag2_bagfile_information:
 - Close other applications to ensure smooth real-time visualization
 - For MCAP files, having `metadata.yaml` significantly improves loading performance
 - If you have multiple camera topics, pre-select the one you want to use to avoid the selection dialog
+
+## Tips for Best Results
+
+### **Alignment Quality Indicators**
+
+Monitor these metrics for successful calibration:
+- **Point count**: Aim for 1000+ visible points for good coverage
+- **Spatial distribution**: Points should be spread across the image, not clustered
+- **Depth variation**: Mix of close and far points (blue to red color range)
+- **Edge alignment**: LiDAR points should align with object edges in the camera image
+
+### **Common Alignment Scenarios**
+
+**Automotive Setup (Forward-facing camera + LiDAR):**
+1. Start with "Match Centers" 
+2. Use "Auto Z-Align" for ground plane alignment
+3. Fine-tune with small rotations (typically <10° in all axes)
+4. Verify road/ground points align with image horizon
+
+**Indoor/Handheld Setup:**
+1. Use "Match Centers" for initial positioning
+2. Focus on wall/object edge alignment
+3. Use mouse controls for intuitive 3D rotation
+4. Verify depth consistency across the scene
+
+**Drone/Aerial Setup:**
+1. "Match Centers" provides good starting point
+2. Pay attention to pitch angle (camera looking down)
+3. Use top-view to verify horizontal alignment
+4. Check that ground features align properly
+
+### **Troubleshooting Alignment Issues**
+
+**No points visible after loading:**
+- Check coordinate system conventions (LiDAR vs Camera)
+- Try "Match Centers" to get initial positioning
+- Verify your data contains synchronized timestamps
+- Check that LiDAR and camera topics are from the same time period
+
+**Points appear but don't align:**
+- Use "Match Centers" first, then fine-tune manually
+- Check if coordinate systems are consistent with your sensor setup
+- Verify camera calibration parameters are correct
+- Try "Auto Z-Align" if dealing with ground-based scenarios
+
+**Alignment drifts during adjustment:**
+- Use text inputs for precise values instead of sliders
+- Make small incremental changes (±0.1m translation, ±5° rotation)
+- Save intermediate results to avoid losing good alignments
+- Use the dual-view to verify changes from multiple perspectives
 
 ## Sample Data
 
