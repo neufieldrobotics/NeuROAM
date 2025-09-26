@@ -1,61 +1,3 @@
-# from PyPDF2 import PdfReader, PdfWriter, PageObject
-# from reportlab.pdfgen import canvas
-# from reportlab.lib.pagesizes import letter
-# import io
-
-
-# def add_message_to_pdf(input_pdf, output_pdf, top_message, bottom_message,
-#                        top_margin=24, bottom_margin=24, font="Helvetica-Bold", font_size=12):
-#     reader = PdfReader(input_pdf)
-#     writer = PdfWriter()
-
-#     for page in reader.pages:
-#         # Get *this page's* size
-#         width = float(page.mediabox.width)
-#         height = float(page.mediabox.height)
-
-#         # Make an overlay PDF with the SAME size as the page
-#         packet = io.BytesIO()
-#         can = canvas.Canvas(packet, pagesize=(width, height))
-#         can.setFont(font, font_size)
-
-#         # Draw messages (centered). Clamp to the page in case margins are big.
-#         y_top = max(top_margin, min(height - top_margin, height - top_margin))
-#         y_bot = max(bottom_margin, min(height - bottom_margin, bottom_margin))
-
-#         can.drawCentredString(width / 2.0, y_top, top_message)
-#         can.drawCentredString(width / 2.0, y_bot, bottom_message)
-
-#         can.save()
-#         packet.seek(0)
-
-#         # Merge overlay
-#         overlay_pdf = PdfReader(packet)
-#         overlay_page = overlay_pdf.pages[0]
-#         page.merge_page(overlay_page)   # overlays without rasterizing
-
-#         writer.add_page(page)
-
-#     with open(output_pdf, "wb") as f:
-#         writer.write(f)
-
-
-#     print(f"Messages added to {output_pdf}")
-
-# if __name__ == "__main__":
-#     import argparse
-#     parser = argparse.ArgumentParser(description="Add messages to top and bottom of each PDF page.")
-#     parser.add_argument("input_pdf", help="Path to the input PDF file.")
-#     parser.add_argument("output_pdf", help="Path to the output PDF file.")
-#     parser.add_argument("--top_message", default="DO NOT REMOVE. THIS WAS APPROVED BY BUILDING OPERATIONS DIRECTOR.", help="Message to add at the top of each page.")
-#     parser.add_argument("--bottom_message", default="© 2025 Your Lab / Company", help="Message to add at the bottom of each page.")
-#     args = parser.parse_args()
-
-#     add_message_to_pdf(
-#         args.input_pdf, args.output_pdf, args.top_message, args.bottom_message, top_margin=36, font_size=24
-#     )
-
-
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 import io
@@ -71,10 +13,13 @@ for floor, location in it.product(EXP_FLOORS, EXP_LOCATIONS):
 print(EXP_OPTIONS)
 
 ISEC_LOCATIONS = ["near train", "Elevators", "near Columbus Ave"]
-ISEC_FLOORS = [1, 2, 3, 4, 5, 6]
+ISEC_FLOORS = [1, 2, 3, 4, 5, 6, "Basement"]
 ISEC_OPTIONS = []
 for floor, location in it.product(ISEC_FLOORS, ISEC_LOCATIONS):
-    ISEC_OPTIONS.append(f"ISEC Floor {floor}, {location}")
+    if floor == "Basement":
+        ISEC_OPTIONS.append(f"ISEC {floor}, {location}")
+    else:
+        ISEC_OPTIONS.append(f"ISEC Floor {floor}, {location}")
 print(ISEC_OPTIONS)
 
 TAG_LABELS = EXP_OPTIONS + ISEC_OPTIONS
