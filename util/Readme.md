@@ -41,16 +41,16 @@ python3 debayer_and_filter_bags.py /path/to/bag --convert-ros1
 
 ```bash
 # LiDAR + IMU only
-python3 process_bag.py /path/to/bag --lidar --imu
+python3 debayer_and_filter_bags.py /path/to/bag --lidar --imu
 
 # Camera only (automatically debayers and replaces compressed)
-python3 process_bag.py /path/to/bag --camera
+python3 debayer_and_filter_bags.py /path/to/bag --camera
 
 # Camera + IMU (for VIO)
-python3 process_bag.py /path/to/bag --camera --imu
+python3 debayer_and_filter_bags.py /path/to/bag --camera --imu
 
 # GPS + IMU + Lidar
-python3 process_bag.py /path/to/bag --gps --imu --lidar
+python3 debayer_and_filter_bags.py /path/to/bag --gps --imu --lidar
 ```
 
 ### Options
