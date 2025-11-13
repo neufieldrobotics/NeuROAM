@@ -25,6 +25,7 @@ HOSTNAME_TO_DOMAIN_ID = {
     "payload3": 3,
     "payload4": 4,
 }
+
 if COMPUTER_HOSTNAME not in HOSTNAME_TO_DOMAIN_ID:
     raise RuntimeError(
         f"Unknown hostname {COMPUTER_HOSTNAME}, should be one of: {list(HOSTNAME_TO_DOMAIN_ID.keys())}"
@@ -114,7 +115,14 @@ def generate_launch_description():
                         "launch",
                         "driver.launch.py",
                     )
-                )
+                ),
+                launch_arguments={
+                    'params_file': os.path.join(
+                        get_package_share_directory("ouster_ros"),
+                        "config",
+                        f"driver_params_{COMPUTER_HOSTNAME}.yaml"
+                    )
+                }.items()
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
