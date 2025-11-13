@@ -130,6 +130,7 @@ alias gd="git diff"
 alias gc="git commit"
 alias gb="git branch"
 alias gpupdate="git add .; git commit -m 'small update'; git push;"
+alias git-pull-neuroam="cd /home/neuroam/NeuROAM && git pull && git submodule update --init --recursive && cd -"
 
 cp ~/NeuROAM/util/.bashrc ~/.bashrc
 alias src="source ~/.bashrc"
