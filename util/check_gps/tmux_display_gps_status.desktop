@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=/home/neuroam/NeuROAM/util/check_gps/tmux_display_gps_status.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Tmux Display GPS Status
+Comment=Start a tmux session to display GPS status on startup

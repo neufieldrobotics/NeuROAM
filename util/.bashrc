@@ -133,6 +133,7 @@ alias gpupdate="git add .; git commit -m 'small update'; git push;"
 alias git-pull-neuroam="cd /home/neuroam/NeuROAM && git pull && git submodule update --init --recursive && cd -"
 
 cp ~/NeuROAM/util/.bashrc ~/.bashrc
+cp ~/NeuROAM/util/check_gps/tmux_display_gps_status.desktop ~/.config/autostart/tmux_display_gps_status.desktop
 alias src="source ~/.bashrc"
 alias src-update="cp ~/NeuROAM/util/.bashrc ~/.bashrc; source ~/.bashrc"
 
