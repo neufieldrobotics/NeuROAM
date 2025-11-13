@@ -1,7 +1,3 @@
-[submodule "ublox"]
-	path = src/ublox
-	url = https://github.com/KumarRobotics/ublox.git
-	branch = ros2
 [submodule "src/flir_camera_driver"]
 	path = src/flir_camera_driver
 	url = git@github.com:neufieldrobotics/flir_camera_driver.git
@@ -22,3 +18,6 @@
 	path = src/system-health-monitor
 	url = git@github.com:neufieldrobotics/system-health-monitor.git
 	branch = main
+[submodule "src/ublox"]
+	path = src/ublox
+	url = git@github.com:neufieldrobotics/ublox.git
