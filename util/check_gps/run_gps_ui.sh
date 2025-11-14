@@ -50,6 +50,6 @@ echo "[start] ${LAUNCH_CMD[*]} -> $UBLOX_LOG"
 setsid "${LAUNCH_CMD[@]}" >>"$UBLOX_LOG" 2>&1 &
 LAUNCH_PID=$!
 
-./NeuROAM/util/cgps_ros.py
+/home/neuroam/NeuROAM/util/check_gps/cgps_ros.py
 
 cleanup
