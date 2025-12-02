@@ -1,0 +1,195 @@
+# VectorNav Topics Configuration
+# Comment out topics you don't want to extract by adding '#' at the start of the line
+
+topics:
+  # IMU data
+  /vectornav/imu:
+    enabled: true
+    type: sensor_msgs/msg/Imu
+    fields:
+      - orientation_x
+      - orientation_y
+      - orientation_z
+      - orientation_w
+      - angular_velocity_x
+      - angular_velocity_y
+      - angular_velocity_z
+      - linear_acceleration_x
+      - linear_acceleration_y
+      - linear_acceleration_z
+
+  /vectornav/imu_uncompensated:
+    enabled: true
+    type: sensor_msgs/msg/Imu
+    fields:
+      - angular_velocity_x
+      - angular_velocity_y
+      - angular_velocity_z
+      - linear_acceleration_x
+      - linear_acceleration_y
+      - linear_acceleration_z
+
+  # Magnetometer
+  /vectornav/magnetic:
+    enabled: true
+    type: sensor_msgs/msg/MagneticField
+    fields:
+      - magnetic_field_x
+      - magnetic_field_y
+      - magnetic_field_z
+
+  # Time synchronization
+  /vectornav/time_syncin:
+    enabled: true
+    type: sensor_msgs/msg/TimeReference
+    fields:
+      - time_ref_sec
+      - time_ref_nanosec
+
+  /vectornav/time_startup:
+    enabled: false
+    type: sensor_msgs/msg/TimeReference
+    fields:
+      - time_ref_sec
+      - time_ref_nanosec
+
+  /vectornav/time_pps:
+    enabled: false
+    type: sensor_msgs/msg/TimeReference
+    fields:
+      - time_ref_sec
+      - time_ref_nanosec
+
+  /vectornav/time_gps:
+    enabled: false
+    type: sensor_msgs/msg/TimeReference
+    fields:
+      - time_ref_sec
+      - time_ref_nanosec
+
+  # Raw data
+  /vectornav/raw/common:
+    enabled: true
+    type: vectornav_msgs/msg/CommonGroup
+    fields:
+      - timestartup
+      - timegps
+      - timesyncin
+      - ypr_x
+      - ypr_y
+      - ypr_z
+      - quaternion_x
+      - quaternion_y
+      - quaternion_z
+      - quaternion_w
+      - angularrate_x
+      - angularrate_y
+      - angularrate_z
+
+  /vectornav/raw/gps:
+    enabled: false
+    type: vectornav_msgs/msg/GpsGroup
+    fields:
+      - tow
+      - week
+      - num_sats
+      - fix
+      - pos_lla_x
+      - pos_lla_y
+      - pos_lla_z
+      - pos_ecef_x
+      - pos_ecef_y
+      - pos_ecef_z
+      - vel_ned_x
+      - vel_ned_y
+      - vel_ned_z
+      - vel_ecef_x
+      - vel_ecef_y
+      - vel_ecef_z
+      - pos_u_x
+      - pos_u_y
+      - pos_u_z
+      - vel_u
+
+  /vectornav/raw/ins:
+    enabled: false
+    type: vectornav_msgs/msg/InsGroup
+    fields:
+      - ins_status
+      - pos_lla_x
+      - pos_lla_y
+      - pos_lla_z
+      - pos_ecef_x
+      - pos_ecef_y
+      - pos_ecef_z
+      - vel_body_x
+      - vel_body_y
+      - vel_body_z
+      - vel_ned_x
+      - vel_ned_y
+      - vel_ned_z
+      - vel_ecef_x
+      - vel_ecef_y
+      - vel_ecef_z
+      - mag_ecef_x
+      - mag_ecef_y
+      - mag_ecef_z
+      - accel_ecef_x
+      - accel_ecef_y
+      - accel_ecef_z
+      - linear_accel_body_x
+      - linear_accel_body_y
+      - linear_accel_body_z
+      - pos_u
+      - vel_u
+
+  # GNSS
+  /vectornav/gnss:
+    enabled: false
+    type: sensor_msgs/msg/NavSatFix
+    fields:
+      - status
+      - latitude
+      - longitude
+      - altitude
+      - position_covariance_0
+      - position_covariance_4
+      - position_covariance_8
+
+  # Pose
+  /vectornav/pose:
+    enabled: false
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    fields:
+      - position_x
+      - position_y
+      - position_z
+      - orientation_x
+      - orientation_y
+      - orientation_z
+      - orientation_w
+
+  # Velocity
+  /vectornav/velocity_body:
+    enabled: false
+    type: geometry_msgs/msg/TwistWithCovarianceStamped
+    fields:
+      - linear_x
+      - linear_y
+      - linear_z
+      - angular_x
+      - angular_y
+      - angular_z
+
+  # Environmental
+  /vectornav/temperature:
+    enabled: false
+    type: sensor_msgs/msg/Temperature
+    fields:
+      - temperature
+
+  /vectornav/pressure:
+    enabled: false
+    type: sensor_msgs/msg/FluidPressure
+    fields:
+      - fluid_pressure

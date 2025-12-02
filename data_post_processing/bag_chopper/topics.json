@@ -1,0 +1,84 @@
+{
+	"aid": [
+		"/aidalm",
+		"/aideph"
+	],
+	"camera_sync": [
+		"/cam_sync/cam0/camera_info",
+		"/cam_sync/cam0/image_raw/compressed",
+		"/cam_sync/cam0/meta",
+		"/cam_sync/cam1/camera_info",
+		"/cam_sync/cam1/image_raw/compressed",
+		"/cam_sync/cam1/meta"
+	],
+	"diagnostics": [
+		"/computer/diagnostics",
+		"/diagnostics",
+		"/node/diagnostics"
+	],
+	"doodle_monitor": [
+		"/doodle_monitor/activity",
+		"/doodle_monitor/iperf_result",
+		"/doodle_monitor/lna_status",
+		"/doodle_monitor/mesh_status",
+		"/doodle_monitor/noise",
+		"/doodle_monitor/peer_list",
+		"/doodle_monitor/raw",
+		"/doodle_monitor/sta_status",
+		"/doodle_monitor/sys/cpu_load",
+		"/doodle_monitor/sys/freemem",
+		"/doodle_monitor/sys/localtime"
+	],
+	"navigation": [
+		"/interrupt_time",
+		"/monhw",
+		"/navclock",
+		"/navcov",
+		"/navstate",
+		"/navstatus",
+		"/nmea",
+		"/rxmraw",
+		"/rxmrtcm",
+		"/rxmsfrb",
+		"/timtm2"
+	],
+	"ouster_lidar": [
+		"/ouster/imu",
+		"/ouster/metadata",
+		"/ouster/nearir_image",
+		"/ouster/points",
+		"/ouster/reflec_image",
+		"/ouster/signal_image"
+	],
+	"ros_system": [
+		"/parameter_events",
+		"/rosout",
+		"/tf_static"
+	],
+	"ublox_gps": [
+		"/ublox_gps_node/fix",
+		"/ublox_gps_node/fix_velocity",
+		"/ublox_gps_node/navpvt"
+	],
+	"vectornav": [
+		"/vectornav/gnss",
+		"/vectornav/imu",
+		"/vectornav/imu_uncompensated",
+		"/vectornav/magnetic",
+		"/vectornav/pose",
+		"/vectornav/pressure",
+		"/vectornav/temperature",
+		"/vectornav/velocity_body",
+		"/vectornav/time_gps",
+		"/vectornav/time_pps",
+		"/vectornav/time_startup",
+		"/vectornav/time_syncin",
+		"/vectornav/raw/attitude",
+		"/vectornav/raw/common",
+		"/vectornav/raw/gps",
+		"/vectornav/raw/gps2",
+		"/vectornav/raw/imu",
+		"/vectornav/raw/ins",
+		"/vectornav/raw/time"
+	]
+}
