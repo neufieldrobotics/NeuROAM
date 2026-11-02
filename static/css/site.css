@@ -1413,69 +1413,50 @@ tr:last-child td {
   font-size: 0.85rem;
 }
 
-/* Choose-your-player */
-.player-select {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.player-card {
-  appearance: none;
+.platforms-panel {
   border: 1px solid var(--rule);
   background: var(--panel);
-  color: inherit;
-  text-align: left;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
-  font: inherit;
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.player-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--rule));
-}
-
-.player-card.is-active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-
-.player-visual {
-  position: relative;
-  height: 150px;
-  background: var(--panel-2);
   overflow: hidden;
 }
 
-.player-visual img,
-.player-cad {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.platforms-panel .payload-swatches {
+  padding: 0.85rem 1rem 0.55rem;
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
 }
 
-.player-meta {
-  padding: 0.65rem 0.7rem 0.8rem;
+.platforms-panel .table-wrap {
+  border: none;
+  margin: 0;
+}
+
+.platforms-panel table {
+  margin: 0;
+}
+
+.platform-sensors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1.1rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid var(--rule);
-  display: grid;
-  gap: 0.2rem;
+  background: var(--panel-2);
+  color: var(--ink2);
+  font-size: 0.84rem;
 }
 
-.player-meta strong {
-  font-size: 0.92rem;
+.platform-sensors b {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 0.25rem;
 }
 
-.player-meta span {
-  color: var(--muted);
-  font-size: 0.78rem;
+#platforms .subhead {
+  margin-top: 1.75rem;
 }
 
-.player-scenes {
-  line-height: 1.35;
+#platforms .robot-grid {
+  margin-top: 0.65rem;
 }
 
 /* Synced map duo */
@@ -1592,18 +1573,8 @@ tr:last-child td {
 }
 
 @media (max-width: 960px) {
-  .player-select {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .map-duo,
   .hard-cases {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .player-select {
     grid-template-columns: 1fr;
   }
 }

@@ -64,10 +64,31 @@
       <div class="wrap">
         <div class="section-head">
           <h2>Platforms</h2>
-          <p>Same sensing payload on five chassis. Select a platform to inspect coverage.</p>
+          <p>Same sensing payload on five robots. Paper numbering: P0 Spot through P4 Go2.</p>
         </div>
-        <div class="player-select" id="playerSelect" role="listbox" aria-label="Choose a platform"></div>
-        <p class="note" id="sensorNote"></p>
+
+        <div class="platforms-panel">
+          <div class="payload-swatches" id="swatches"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Payload</th>
+                  <th>Robot</th>
+                  <th>Sequences</th>
+                  <th>Duration</th>
+                  <th>Distance</th>
+                  <th>Scenes</th>
+                </tr>
+              </thead>
+              <tbody id="platformRows"></tbody>
+            </table>
+          </div>
+          <div class="platform-sensors" id="sensorNote"></div>
+        </div>
+
+        <h3 class="subhead">Meet the platforms</h3>
+        <div class="robot-grid" id="robotGrid"></div>
       </div>
     </section>
 

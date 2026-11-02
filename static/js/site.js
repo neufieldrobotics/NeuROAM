@@ -173,124 +173,49 @@ function initHeroParallax() {
   onScroll();
 }
 
-function mountMiniViewer(host, url, colorHex) {
-  if (!host || !url) return;
-  const scene = new THREE.Scene();
-  const dark = document.documentElement.getAttribute("data-theme") === "dark";
-  scene.background = new THREE.Color(dark ? 0x242421 : 0xf0efeb);
-  const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
-  camera.position.set(1.2, 0.7, 1.4);
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  host.appendChild(renderer.domElement);
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.display = "block";
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.enablePan = false;
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-  dir.position.set(2, 3, 2);
-  scene.add(dir);
-
-  const resize = () => {
-    const w = Math.max(host.clientWidth, 1);
-    const h = Math.max(host.clientHeight, 1);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h, false);
-  };
-  resize();
-
-  new GLTFLoader().load(url, (gltf) => {
-    const root = gltf.scene;
-    scene.add(root);
-    root.traverse((o) => {
-      if (!o.isMesh) return;
-      o.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(colorHex),
-        metalness: 0.12,
-        roughness: 0.52,
-      });
-    });
-    const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3()).length();
-    const center = box.getCenter(new THREE.Vector3());
-    root.position.sub(center);
-    camera.position.set(size * 0.95, size * 0.55, size * 1.1);
-    controls.target.set(0, 0, 0);
-    controls.update();
-    resize();
-  });
-
-  window.addEventListener("neuroam-theme", () => {
-    const d = document.documentElement.getAttribute("data-theme") === "dark";
-    scene.background = new THREE.Color(d ? 0x242421 : 0xf0efeb);
-  });
-  window.addEventListener("resize", resize);
-  (function loop() {
-    requestAnimationFrame(loop);
-    controls.update();
-    renderer.render(scene, camera);
-  })();
+function renderPlatforms(platforms) {
+  document.getElementById("swatches").innerHTML = platforms.platforms
+    .map(
+      (p) =>
+        `<span class="swatch"><i style="background:${p.color}"></i>P${p.id} ${p.robot}</span>`
+    )
+    .join("");
+  document.getElementById("platformRows").innerHTML = platforms.platforms
+    .map(
+      (p) => `<tr>
+        <td class="pid" style="color:${p.color}">P${p.id}</td>
+        <td>${p.robot}</td>
+        <td>${p.sequences}</td>
+        <td>${p.duration_min} min</td>
+        <td>${p.distance_km} km</td>
+        <td>${p.scenes}</td>
+      </tr>`
+    )
+    .join("");
+  document.getElementById("sensorNote").innerHTML = platforms.sensors
+    .map((s) => `<span><b>${s.name}</b> ${s.rate}</span>`)
+    .join("");
 }
 
-function initPlayerSelect(platforms) {
-  const host = document.getElementById("playerSelect");
-  if (!host) return;
-  let selected = 0;
-
-  host.innerHTML = platforms.platforms
+function initRobotGallery(platforms) {
+  const grid = document.getElementById("robotGrid");
+  if (!grid) return;
+  grid.innerHTML = platforms.platforms
     .map((p) => {
       const photo = ROBOT_PHOTOS[p.id];
-      return `<button type="button" class="player-card" data-id="${p.id}" style="--accent:${p.color}" role="option" aria-selected="false">
-        <div class="player-visual">
-          <img src="${photo.file}" alt="${photo.alt}" loading="lazy" />
-          <div class="player-cad" id="playerCad${p.id}" hidden></div>
+      const delay = (p.id * 1.7).toFixed(1);
+      return `<article class="robot-card" style="--accent:${p.color}; --kb-delay:${delay}s">
+        <div class="rv">
+          <img class="robot-photo" src="${photo.file}" alt="${photo.alt}" loading="lazy" width="1000" height="750" />
+          <span class="rv-glow" aria-hidden="true"></span>
         </div>
-        <div class="player-meta">
-          <strong style="color:${p.color}">P${p.id} · ${p.robot}</strong>
-          <span>${p.sequences} seq · ${p.duration_min} min · ${p.distance_km} km</span>
-          <span class="player-scenes">${p.scenes}</span>
+        <div class="meta">
+          <strong style="color:${p.color}">P${p.id} ${p.robot}</strong>
+          <span>${p.sequences} sequences · ${p.distance_km} km</span>
         </div>
-      </button>`;
+      </article>`;
     })
     .join("");
-
-  function select(id) {
-    selected = id;
-    host.querySelectorAll(".player-card").forEach((btn) => {
-      const on = Number(btn.dataset.id) === selected;
-      btn.classList.toggle("is-active", on);
-      btn.setAttribute("aria-selected", on ? "true" : "false");
-      const cad = btn.querySelector(".player-cad");
-      const img = btn.querySelector("img");
-      if (!cad || !img) return;
-      if (on) {
-        img.hidden = true;
-        cad.hidden = false;
-        if (!cad.dataset.ready) {
-          cad.dataset.ready = "1";
-          mountMiniViewer(cad, ROBOT_MODELS[id], COLORS[id]);
-        }
-      } else {
-        img.hidden = false;
-        cad.hidden = true;
-      }
-    });
-  }
-
-  host.addEventListener("click", (e) => {
-    const btn = e.target.closest(".player-card");
-    if (!btn) return;
-    select(Number(btn.dataset.id));
-  });
-
-  document.getElementById("sensorNote").textContent = platforms.sensors
-    .map((s) => `${s.name} ${s.rate}`)
-    .join(" · ");
-  select(0);
 }
 
 function interpolatePose(points, t) {
@@ -1026,7 +951,8 @@ async function main() {
   ]);
 
   renderHero(meta, platforms);
-  initPlayerSelect(platforms);
+  renderPlatforms(platforms);
+  initRobotGallery(platforms);
   initPlayback(traj, sequences, comm);
   initMap3D(traj3d);
   initCAD();
