@@ -235,73 +235,83 @@ html[data-theme="dark"] .hero-map-dark {
   --depth-x: 30px;
   --depth-y: 22px;
   background:
-    radial-gradient(42% 36% at 72% 38%, color-mix(in srgb, var(--p0) 18%, transparent), transparent 70%),
-    radial-gradient(34% 30% at 22% 68%, color-mix(in srgb, var(--p2) 14%, transparent), transparent 72%),
-    radial-gradient(28% 24% at 48% 22%, color-mix(in srgb, var(--p3) 12%, transparent), transparent 70%);
-  filter: blur(8px);
-  opacity: 0.85;
+    radial-gradient(42% 36% at 72% 38%, color-mix(in srgb, var(--p0) 16%, transparent), transparent 70%),
+    radial-gradient(34% 30% at 22% 68%, color-mix(in srgb, var(--p2) 12%, transparent), transparent 72%),
+    radial-gradient(28% 24% at 48% 22%, color-mix(in srgb, var(--p3) 10%, transparent), transparent 70%);
+  filter: blur(10px);
+  opacity: 0.8;
   animation: heroOrb 10s ease-in-out infinite alternate;
 }
 
-.hero-layer-spot,
-.hero-layer-go2 {
-  inset: auto;
-  width: min(36vw, 460px);
-  aspect-ratio: 4 / 3;
-  background: transparent;
+.hero-layer-traces {
+  --depth-x: 36px;
+  --depth-y: 26px;
+  inset: 6% 2% 10% 28%;
+  opacity: 0.92;
+  -webkit-mask-image: radial-gradient(85% 75% at 55% 45%, #000 35%, transparent 78%);
+  mask-image: radial-gradient(85% 75% at 55% 45%, #000 35%, transparent 78%);
 }
 
-.hero-layer-spot {
-  --depth-x: 56px;
-  --depth-y: 40px;
-  right: max(4vw, 1.5rem);
-  bottom: 18%;
-}
-
-.hero-layer-go2 {
-  --depth-x: 72px;
-  --depth-y: 52px;
-  right: max(26vw, 12rem);
-  bottom: 38%;
-  width: min(26vw, 320px);
-  opacity: 0.94;
-}
-
-.hero-floater {
+.hero-traces {
   width: 100%;
   height: 100%;
-  border-radius: 2px;
-  overflow: hidden;
-  box-shadow: 0 28px 70px rgba(31, 31, 30, 0.14);
-  -webkit-mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
-  mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
-  transform-origin: 50% 60%;
-  will-change: transform;
+  display: block;
+  overflow: visible;
 }
 
-.hero-layer-spot .hero-floater {
-  animation: heroFloatA 6.5s ease-in-out infinite alternate;
+.hero-traces .trace {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--trace) 35%, transparent));
 }
 
-.hero-layer-go2 .hero-floater {
-  animation: heroFloatB 8s ease-in-out infinite alternate;
+.hero-traces .trace-glow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+  opacity: 0.14;
 }
 
-.hero-layer-spot img,
-.hero-layer-go2 img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform-origin: 50% 55%;
-  will-change: transform;
+.hero-traces .trace-draw {
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: heroTraceDraw 5.5s ease forwards;
+  animation-delay: var(--delay, 0s);
 }
 
-.hero-layer-spot img {
-  animation: heroKenA 12s ease-in-out infinite alternate;
+.hero-traces .trace-run {
+  stroke-dasharray: 10 18;
+  animation: heroTraceRun 18s linear infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0.85;
 }
 
-.hero-layer-go2 img {
-  animation: heroKenB 14s ease-in-out infinite alternate;
+.hero-layer-scan {
+  --depth-x: 22px;
+  --depth-y: 16px;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 42%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 49%,
+    color-mix(in srgb, var(--p0) 10%, transparent) 50.5%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 52%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: heroScan 9s ease-in-out infinite;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+
+html[data-theme="dark"] .hero-layer-scan {
+  mix-blend-mode: screen;
+  opacity: 0.45;
 }
 
 .hero-scrim {
@@ -311,15 +321,15 @@ html[data-theme="dark"] .hero-map-dark {
   background:
     linear-gradient(
       100deg,
-      color-mix(in srgb, var(--surface) 88%, transparent) 0%,
-      color-mix(in srgb, var(--surface) 58%, transparent) 28%,
-      color-mix(in srgb, var(--surface) 12%, transparent) 58%,
-      color-mix(in srgb, var(--surface) 36%, transparent) 100%
+      color-mix(in srgb, var(--surface) 90%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 62%, transparent) 30%,
+      color-mix(in srgb, var(--surface) 8%, transparent) 58%,
+      color-mix(in srgb, var(--surface) 28%, transparent) 100%
     ),
     linear-gradient(
       to top,
-      color-mix(in srgb, var(--surface) 82%, transparent) 0%,
-      transparent 38%
+      color-mix(in srgb, var(--surface) 84%, transparent) 0%,
+      transparent 40%
     );
 }
 
@@ -451,51 +461,40 @@ html[data-theme="dark"] .hero-map-dark {
   }
 }
 
-@keyframes heroFloatA {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(-1.2deg);
-  }
-  100% {
-    transform: translate3d(-3%, -5%, 0) rotate(1.4deg);
+@keyframes heroTraceDraw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-@keyframes heroFloatB {
-  0% {
-    transform: translate3d(0, 0, 0) rotate(1deg);
-  }
-  100% {
-    transform: translate3d(3.5%, -4%, 0) rotate(-1.6deg);
+@keyframes heroTraceRun {
+  to {
+    stroke-dashoffset: -420;
   }
 }
 
-@keyframes heroKenA {
+@keyframes heroScan {
   0% {
-    transform: scale(1.05) translate3d(0, 0, 0);
+    background-position: 120% 0;
   }
   100% {
-    transform: scale(1.16) translate3d(-3%, -2%, 0);
-  }
-}
-
-@keyframes heroKenB {
-  0% {
-    transform: scale(1.08) translate3d(1%, 0, 0);
-  }
-  100% {
-    transform: scale(1.18) translate3d(-2%, 2.5%, 0);
+    background-position: -40% 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-map,
   .hero-layer-orb,
-  .hero-floater,
-  .hero-layer-spot img,
-  .hero-layer-go2 img,
+  .hero-layer-scan,
+  .hero-traces .trace-draw,
+  .hero-traces .trace-run,
   .btn {
     animation: none !important;
     transition: none !important;
+  }
+
+  .hero-traces .trace-draw {
+    stroke-dashoffset: 0;
   }
 
   .hero-parallax,
@@ -866,21 +865,8 @@ tr:last-child td {
     padding: 6.5rem 0 3.5rem;
   }
 
-  .hero-layer-spot,
-  .hero-layer-go2 {
-    opacity: 0.9;
-  }
-
-  .hero-layer-spot {
-    width: min(46vw, 240px);
-    right: 1rem;
-    bottom: 12%;
-  }
-
-  .hero-layer-go2 {
-    width: min(36vw, 180px);
-    right: 42vw;
-    bottom: 34%;
+  .hero-layer-traces {
+    inset: 10% 0 14% 8%;
   }
 
   .hero-scrim {

@@ -89,6 +89,44 @@ function renderHero(meta, platforms) {
     `<div>${meta.authors.join(", ")}</div><div class="affil">${meta.affiliation}</div>`;
 }
 
+async function initHeroTraces() {
+  const svg = document.getElementById("heroTraces");
+  if (!svg) return;
+  try {
+    const data = await loadJSON("static/data/hero_paths.json");
+    const ns = "http://www.w3.org/2000/svg";
+    svg.setAttribute("viewBox", data.viewBox.join(" "));
+    const frag = document.createDocumentFragment();
+    data.paths.forEach((p, i) => {
+      const delay = `${0.15 + i * 0.35}s`;
+      const glow = document.createElementNS(ns, "path");
+      glow.setAttribute("d", p.d);
+      glow.setAttribute("class", "trace-glow");
+      glow.setAttribute("stroke", p.color);
+      glow.style.setProperty("--trace", p.color);
+
+      const base = document.createElementNS(ns, "path");
+      base.setAttribute("d", p.d);
+      base.setAttribute("class", "trace trace-draw");
+      base.setAttribute("stroke", p.color);
+      base.style.setProperty("--trace", p.color);
+      base.style.setProperty("--delay", delay);
+
+      const run = document.createElementNS(ns, "path");
+      run.setAttribute("d", p.d);
+      run.setAttribute("class", "trace trace-run");
+      run.setAttribute("stroke", p.color);
+      run.style.setProperty("--trace", p.color);
+      run.style.setProperty("--delay", delay);
+
+      frag.append(glow, base, run);
+    });
+    svg.appendChild(frag);
+  } catch (err) {
+    console.warn("Hero traces unavailable", err);
+  }
+}
+
 function initHeroParallax() {
   const hero = document.getElementById("hero");
   if (!hero) return;
@@ -924,6 +962,7 @@ function renderBenchmark(bench) {
 async function main() {
   initTheme();
   initHeroParallax();
+  initHeroTraces();
   const [meta, platforms, traj, sequences, comm, scenes, bench, clips, traj3d] = await Promise.all([
     loadJSON("static/data/meta.json"),
     loadJSON("static/data/platforms.json"),
