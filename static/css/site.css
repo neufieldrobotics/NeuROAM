@@ -213,9 +213,9 @@ a:hover {
   height: 100%;
   object-fit: cover;
   object-position: center 42%;
-  transform: scale(1.08);
-  animation: heroDrift 28s ease-in-out infinite alternate;
-  opacity: 0.92;
+  transform: scale(1.1);
+  animation: heroDrift 18s ease-in-out infinite alternate;
+  opacity: 0.95;
 }
 
 .hero-map-dark {
@@ -240,7 +240,7 @@ html[data-theme="dark"] .hero-map-dark {
     radial-gradient(28% 24% at 48% 22%, color-mix(in srgb, var(--p3) 12%, transparent), transparent 70%);
   filter: blur(8px);
   opacity: 0.85;
-  animation: heroOrb 16s ease-in-out infinite alternate;
+  animation: heroOrb 10s ease-in-out infinite alternate;
 }
 
 .hero-layer-spot,
@@ -248,30 +248,43 @@ html[data-theme="dark"] .hero-map-dark {
   inset: auto;
   width: min(36vw, 460px);
   aspect-ratio: 4 / 3;
-  border-radius: 2px;
-  overflow: hidden;
-  box-shadow: 0 28px 70px rgba(31, 31, 30, 0.14);
   background: transparent;
-  -webkit-mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
-  mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
 }
 
 .hero-layer-spot {
-  --depth-x: 48px;
-  --depth-y: 34px;
+  --depth-x: 56px;
+  --depth-y: 40px;
   right: max(4vw, 1.5rem);
   bottom: 18%;
-  animation: heroFloatA 9s ease-in-out infinite alternate;
 }
 
 .hero-layer-go2 {
-  --depth-x: 64px;
-  --depth-y: 44px;
+  --depth-x: 72px;
+  --depth-y: 52px;
   right: max(26vw, 12rem);
   bottom: 38%;
   width: min(26vw, 320px);
-  opacity: 0.92;
-  animation: heroFloatB 11s ease-in-out infinite alternate;
+  opacity: 0.94;
+}
+
+.hero-floater {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 28px 70px rgba(31, 31, 30, 0.14);
+  -webkit-mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
+  mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
+  transform-origin: 50% 60%;
+  will-change: transform;
+}
+
+.hero-layer-spot .hero-floater {
+  animation: heroFloatA 6.5s ease-in-out infinite alternate;
+}
+
+.hero-layer-go2 .hero-floater {
+  animation: heroFloatB 8s ease-in-out infinite alternate;
 }
 
 .hero-layer-spot img,
@@ -279,7 +292,16 @@ html[data-theme="dark"] .hero-map-dark {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.06);
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+
+.hero-layer-spot img {
+  animation: heroKenA 12s ease-in-out infinite alternate;
+}
+
+.hero-layer-go2 img {
+  animation: heroKenB 14s ease-in-out infinite alternate;
 }
 
 .hero-scrim {
@@ -408,47 +430,69 @@ html[data-theme="dark"] .hero-map-dark {
 
 @keyframes heroDrift {
   0% {
-    transform: scale(1.06) translate3d(0, 0, 0);
+    transform: scale(1.08) translate3d(0.8%, 0.4%, 0);
+  }
+  50% {
+    transform: scale(1.14) translate3d(-1.4%, -0.8%, 0);
   }
   100% {
-    transform: scale(1.12) translate3d(-1.6%, -1.2%, 0);
+    transform: scale(1.1) translate3d(-2.4%, 1.1%, 0);
   }
 }
 
 @keyframes heroOrb {
   0% {
-    opacity: 0.7;
-    transform: translate3d(-1%, 1%, 0) scale(1);
+    opacity: 0.55;
+    transform: translate3d(-2%, 1.5%, 0) scale(1);
   }
   100% {
     opacity: 1;
-    transform: translate3d(1.5%, -1.5%, 0) scale(1.05);
+    transform: translate3d(2.5%, -2%, 0) scale(1.08);
   }
 }
 
 @keyframes heroFloatA {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(-1.2deg);
   }
   100% {
-    transform: translate3d(-1.5%, -2.5%, 0);
+    transform: translate3d(-3%, -5%, 0) rotate(1.4deg);
   }
 }
 
 @keyframes heroFloatB {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(1deg);
   }
   100% {
-    transform: translate3d(2%, -1.8%, 0);
+    transform: translate3d(3.5%, -4%, 0) rotate(-1.6deg);
+  }
+}
+
+@keyframes heroKenA {
+  0% {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.16) translate3d(-3%, -2%, 0);
+  }
+}
+
+@keyframes heroKenB {
+  0% {
+    transform: scale(1.08) translate3d(1%, 0, 0);
+  }
+  100% {
+    transform: scale(1.18) translate3d(-2%, 2.5%, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-map,
   .hero-layer-orb,
-  .hero-layer-spot,
-  .hero-layer-go2,
+  .hero-floater,
+  .hero-layer-spot img,
+  .hero-layer-go2 img,
   .btn {
     animation: none !important;
     transition: none !important;

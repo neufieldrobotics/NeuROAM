@@ -95,34 +95,39 @@ function initHeroParallax() {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return;
 
-  let targetX = 0;
-  let targetY = 0;
+  let pointerX = 0;
+  let pointerY = 0;
+  let hasPointer = false;
   let currX = 0;
   let currY = 0;
-  let raf = 0;
+  let start = performance.now();
+  let visible = true;
 
-  const apply = () => {
-    currX += (targetX - currX) * 0.08;
-    currY += (targetY - currY) * 0.08;
+  const tick = (now) => {
+    if (!visible) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    const t = (now - start) / 1000;
+    const idleX = Math.sin(t * 0.35) * 0.28 + Math.sin(t * 0.11) * 0.12;
+    const idleY = Math.cos(t * 0.27) * 0.22 + Math.cos(t * 0.09) * 0.1;
+    const targetX = hasPointer ? pointerX * 0.85 + idleX * 0.25 : idleX;
+    const targetY = hasPointer ? pointerY * 0.85 + idleY * 0.25 : idleY;
+    currX += (targetX - currX) * 0.06;
+    currY += (targetY - currY) * 0.06;
     hero.style.setProperty("--hero-x", currX.toFixed(4));
     hero.style.setProperty("--hero-y", currY.toFixed(4));
-    raf = 0;
-    if (Math.abs(targetX - currX) > 0.001 || Math.abs(targetY - currY) > 0.001) {
-      raf = requestAnimationFrame(apply);
-    }
+    requestAnimationFrame(tick);
   };
-
-  const queue = () => {
-    if (!raf) raf = requestAnimationFrame(apply);
-  };
+  requestAnimationFrame(tick);
 
   hero.addEventListener(
     "pointermove",
     (e) => {
       const r = hero.getBoundingClientRect();
-      targetX = ((e.clientX - r.left) / r.width) * 2 - 1;
-      targetY = ((e.clientY - r.top) / r.height) * 2 - 1;
-      queue();
+      hasPointer = true;
+      pointerX = ((e.clientX - r.left) / r.width) * 2 - 1;
+      pointerY = ((e.clientY - r.top) / r.height) * 2 - 1;
     },
     { passive: true }
   );
@@ -130,16 +135,15 @@ function initHeroParallax() {
   hero.addEventListener(
     "pointerleave",
     () => {
-      targetX = 0;
-      targetY = 0;
-      queue();
+      hasPointer = false;
     },
     { passive: true }
   );
 
   const onScroll = () => {
     const r = hero.getBoundingClientRect();
-    if (r.bottom <= 0 || r.top >= window.innerHeight) return;
+    visible = r.bottom > 0 && r.top < window.innerHeight;
+    if (!visible) return;
     const progress = 1 - Math.min(1, Math.max(0, r.bottom / (r.height + window.innerHeight * 0.35)));
     hero.style.setProperty("--hero-scroll", progress.toFixed(4));
   };
