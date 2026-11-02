@@ -1,253 +1,261 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
-  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
-  <!-- Replace the content tag with appropriate information -->
-  <meta name="description" content="NeuROAM: A Multi-Session Dataset for Large-Scale, Heterogeneous, Multi-Robot SLAM in Dynamic Environments">
-  <meta property="og:title" content="NeuROAM: A Multi-Session Dataset for Large-Scale, Heterogeneous, Multi-Robot SLAM in Dynamic Environments" />
-  <meta property="og:description" content="A cross-domain interactive 3D segmentation framework that unifies indoor, outdoor, and aerial scenes with both point-based and text-based prompts." />
-  <meta property="og:url" content="https://neu-vi.github.io/SNAP/" />
-  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
-  <meta property="og:image" content="static/image/your_banner_image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-
-
-  <meta name="twitter:title" content="NeuROAM: A Multi-Session Dataset for Large-Scale, Heterogeneous, Multi-Robot SLAM in Dynamic Environments">
-  <meta name="twitter:description" content="NeuROAM: A Multi-Session Dataset for Large-Scale, Heterogeneous, Multi-Robot SLAM in Dynamic Environments">
-  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
-  <meta name="twitter:image" content="static/images/your_twitter_banner_image.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <!-- Keywords for your paper to be indexed by-->
-  <meta name="keywords" content="NeuROAM, SLAM, Multi-Robot, Dataset, 3D Mapping, Dynamic Environments">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-
-  <title>NeuROAM</title>
-  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
-  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
-
-  <link rel="stylesheet" href="static/css/bulma.min.css">
-  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
-  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
-  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
-  <link rel="stylesheet" href="static/css/index.css">
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
-  <script defer src="static/js/fontawesome.all.min.js"></script>
-  <script src="static/js/bulma-carousel.min.js"></script>
-  <script src="static/js/bulma-slider.min.js"></script>
-  <script src="static/js/index.js"></script>
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-checkradio@2.1.0/dist/css/bulma-checkradio.min.css">
+  <title>NeuROAM — Multi-Robot SLAM Dataset</title>
+  <meta name="description" content="NeuROAM: a dataset for large-scale, heterogeneous, multi-robot SLAM in dynamic environments. Five robots, GNSS-synchronized sensors, campus-scale ground truth, and measured mesh-radio links.">
+  <meta property="og:title" content="NeuROAM">
+  <meta property="og:description" content="A dataset for large-scale, heterogeneous, multi-robot SLAM in dynamic environments.">
+  <meta property="og:image" content="static/images/teaser.webp">
+  <meta property="og:url" content="https://neufieldrobotics.github.io/NeuROAM/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="static/images/favicon.ico">
+  <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
+  <link rel="stylesheet" href="static/css/site.css">
 </head>
-
 <body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="#top">NeuROAM</a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#platforms">Platforms</a>
+        <a href="#playback">Playback</a>
+        <a href="#sync">Sync</a>
+        <a href="#payload">Payload</a>
+        <a href="#results">Results</a>
+        <a href="#data">Data</a>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">Dark</button>
+      </nav>
+    </div>
+  </header>
 
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="kicker">Project page</p>
+          <h1>NeuROAM</h1>
+          <p class="lede">Five heterogeneous robots, one GNSS-disciplined clock, campus-scale ground truth, and the radio links they actually had.</p>
+          <div class="stats" id="heroStats"></div>
+          <div class="cta-row">
+            <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Dataset</a>
+            <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Code</a>
+            <a class="btn secondary" href="#playback">Interactive map</a>
+          </div>
+          <div class="authors" id="authors"></div>
+        </div>
+        <figure class="hero-visual">
+          <img src="static/images/teaser.webp" alt="Three NeuROAM robots on campus with overlaid trajectories" width="1920" height="1200">
+        </figure>
+      </div>
+    </section>
 
-  <section class="hero">
-    <div class="hero-body">
-      <div class="container is-max-desktop">
-        <div class="columns is-centered">
-          <div class="column has-text-centered">
-            <!-- <h1 class="title is-1 publication-title">SNAP: Towards Segmenting Anything in Any Point Cloud</h1> -->
-            <h1 class="title is-1 publication-title">
-              <span style="color:#209CEE; font-weight:bold;">NeuROAM</span>
-            </h1>
+    <section id="platforms">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Platforms</h2>
+          <p>Same payload on five robots. Paper numbering: P0 Spot through P4 Go2.</p>
+        </div>
+        <div class="payload-swatches" id="swatches"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Payload</th>
+                <th>Robot</th>
+                <th>LiDAR</th>
+                <th>Sequences</th>
+                <th>Duration</th>
+                <th>Distance</th>
+              </tr>
+            </thead>
+            <tbody id="platformRows"></tbody>
+          </table>
+        </div>
+        <p class="note" id="sensorNote"></p>
+      </div>
+    </section>
 
+    <section id="playback">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Simultaneous playback</h2>
+          <p>All five payloads on one UTC clock. Scrub the day; trails, place, height, and radio links update together.</p>
+        </div>
+        <div class="controls">
+          <button type="button" id="playBtn">Play</button>
+          <label class="clock-label" id="clockLabel">—</label>
+          <input type="range" id="timeSlider" min="0" max="1000" value="0" aria-label="Time scrubber">
+          <label>Speed
+            <select id="speedSelect" aria-label="Playback speed">
+              <option value="1">1×</option>
+              <option value="5" selected>5×</option>
+              <option value="20">20×</option>
+              <option value="60">60×</option>
+            </select>
+          </label>
+        </div>
+        <div class="playback-layout">
+          <div id="map" role="img" aria-label="Campus map with robot trajectories"></div>
+          <div class="side-panels" id="robotPanels"></div>
+        </div>
+        <div class="link-bands" id="linkBands" aria-label="Inter-robot link timeline"></div>
+        <p class="note">Link states: direct · mesh route · no link · unknown. Trace at 5 s resolution from the released radio logs.</p>
+        <div class="video-block">
+          <p class="note" style="margin-bottom:0.5rem">Recording of the same day (optional):</p>
+          <video controls preload="metadata" poster="static/images/teaser.webp">
+            <source src="static/video/comm_video.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </section>
 
+    <section id="sync">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Time synchronization</h2>
+          <p>Every sensor on every robot shares one GNSS-disciplined clock.</p>
+        </div>
+        <div class="sync-grid">
+          <div>
+            <canvas id="gantt" width="900" height="420" aria-label="Sequence timeline by payload"></canvas>
+            <p class="note" id="ganttNote">Hover or scrub playback to see how many robots are in ISEC and EXP.</p>
+          </div>
+          <div class="sync-chain">
+            <strong>Clock chain</strong>
+            <ol>
+              <li>ZED-F9T feeds PPS and NMEA to the Ouster, which stamps in hardware.</li>
+              <li>PPS to the camera sync board triggers both cameras together.</li>
+              <li>Host time stamps the images. Receive time − header stamp stays within ~1 ms of GNSS.</li>
+              <li>Ouster IMU lag 0.6–0.9 ms; images ~35 ms; clouds 112–127 ms (stamp is the start of the 100 ms sweep).</li>
+            </ol>
+            <figure class="sync-photo">
+              <img src="static/images/hw_sync_board.webp" alt="Camera synchronization board" width="1100" height="1095">
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <!-- Paper authors -->
-            <div class="is-size-5 publication-authors">
-              <span class="author-block">
-                <a href="https://aniket-gupta1.github.io/" target="_blank">Aniket Gupta</a><sup>1, *</sup>,
-              </span>
-            </div>
+    <section id="payload">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Payload</h2>
+          <p>One enclosure on every robot. Orbit, explode the stack, or clip through the shell.</p>
+        </div>
+        <div class="cad-ui">
+          <button type="button" data-view="iso">Iso</button>
+          <button type="button" data-view="front">Front</button>
+          <button type="button" data-view="side">Side</button>
+          <button type="button" data-view="top">Top</button>
+          <label>Explode <input type="range" id="explode" min="0" max="100" value="0"></label>
+          <label>Clip <input type="range" id="clip" min="0" max="100" value="0"></label>
+        </div>
+        <div class="payload-grid">
+          <div id="cad" aria-label="Interactive 3D payload model"></div>
+          <div class="cad-side">
+            <img src="static/images/hw_payload.webp" alt="Rendered payload exterior">
+            <img src="static/images/hw_layers.webp" alt="Internal payload levels">
+            <p class="note">Stereo cameras, Ouster LiDAR, VectorNav IMU, ZED-F9T GNSS, Doodle Labs radio, Jetson Orin Nano.</p>
+          </div>
+        </div>
+        <div class="legend" id="cadLegend"></div>
+      </div>
+    </section>
 
-            <!-- Institution and Conferance -->
-            <div class="is-size-5 publication-authors">
-              <span class="author-block"><sup>1</sup>Northeastern University, <sup>2</sup>.</span>
-              <!-- <br>Conferance name and year</span> -->
-              <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
-            </div>
+    <section id="scenes">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Scenes</h2>
+          <p>Where C-SLAM is hard: basements, glass, crowds, elevators, stairs.</p>
+        </div>
+        <div class="scenes-grid" id="scenesGrid"></div>
+      </div>
+    </section>
 
-            <div class="column has-text-centered">
-              <div class="publication-links">
-                <!-- Arxiv PDF link -->
-                <span class="link-block">
-                  <a href="static/pdfs/NeuROAM.pdf" target="_blank"
-                    class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="fas fa-file-pdf"></i>
-                    </span>
-                    <span>Paper</span>
-                  </a>
-                </span>
+    <section id="results">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Benchmark</h2>
+          <p>Nine systems on 22 sequences. No method is both complete and accurate on NeuROAM.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Input</th>
+                <th>Method</th>
+                <th>Full</th>
+                <th>Partial</th>
+                <th>Fail</th>
+                <th>ATE [m]</th>
+                <th>RPE<sub>t</sub> [m]</th>
+                <th>RPE<sub>r</sub> [°]</th>
+              </tr>
+            </thead>
+            <tbody id="benchSummary"></tbody>
+          </table>
+        </div>
+        <p class="note" id="benchNote"></p>
+        <h3 style="margin:1.5rem 0 0.75rem;font-size:1.05rem;font-weight:600;">Per-sequence ATE</h3>
+        <div class="filters" id="payloadFilters"></div>
+        <div class="table-wrap">
+          <table>
+            <thead id="benchDetailHead"></thead>
+            <tbody id="benchDetail"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-                <!-- Supplementary PDF link -->
-                <span class="link-block">
-                  <a href="static/pdfs/NeuROAM_Supp.pdf" target="_blank"
-                    class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="fas fa-file-pdf"></i>
-                    </span>
-                    <span>Supplementary</span>
-                  </a>
-                </span>
-
-                <!-- Github link -->
-                <span class="link-block">
-                  <a href="https://github.com/neufieldrobotics/NeuROAM/tree/main" target="_blank"
-                    class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="fab fa-github"></i>
-                    </span>
-                    <span>Code</span>
-                  </a>
-                </span>
-
-                <!-- ArXiv abstract Link -->
-                <span class="link-block">
-                  <a href="" target="_blank"
-                    class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="ai ai-arxiv"></i>
-                    </span>
-                    <span>arXiv</span>
-                  </a>
-                </span>
-              </div>
+    <section id="data">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Data release</h2>
+          <p>Bags, extracted sensors, shared-frame ground truth, and calibration. Download on Hugging Face.</p>
+        </div>
+        <div class="data-grid">
+          <pre class="codeblock">payloadN/
+  bags/                    merged or segment MCAPs
+  payloadN_sequences.json  name, bag, start_ns / end_ns
+  extracted/
+    cam0/, cam1/           stereo PNG @ header.stamp
+    point_cloud/           Ouster sweeps (.npz)
+    imu/, gps/             CSV
+  ground_truth/            *_gt.tum in one campus map frame
+  calibration/
+    kalibr/                cam–IMU
+    refined/               LiDAR–cam (not yet for P1 Scout)</pre>
+          <div>
+            <p class="note" style="margin-top:0">Folders use paper numbers. Recorder numbering differs for two robots: Scout is recorder payload3; Go2-W is recorder payload1.</p>
+            <p class="note">Host clocks agree to a few milliseconds. Direct radio link to another node: 28–71% of monitored time.</p>
+            <div class="cta-row" style="margin-top:1rem">
+              <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Hugging Face</a>
+              <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Drivers &amp; docs</a>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-
-
-  <!-- Teaser video-->
-  <section class="hero teaser">
-    <div class="container is-max-desktop">
-      <div class="hero-body">
-        <video poster="" id="tree" autoplay controls muted loop height="100%">
-          <!-- Your video here -->
-          <source src="static/videos/NeuROAM.mp4" type="video/mp4">
-        </video>
-        <h2 class="subtitle has-text-centered">
-          NeuROAM Video
-        </h2>
-      </div>
-    </div>
-  </section>
-  <!-- End teaser video -->
-
-  <!-- Paper abstract -->
-  <section class="section hero is-light">
-    <div class="container is-max-desktop">
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
-          <h2 class="title is-3">Abstract</h2>
-          <div class="content has-text-justified">
-            <p>
-              
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  <!-- End paper abstract -->
-
-  <section id="method" class="hero is-small">
-    <div class="hero-body">
-      <div class="container is-max-desktop">
-        <h2 class="title is-3 has-text-centered">Method Overview</h2>
-
-        <div class="method-grid-15-8">
-          
-
-        <br>
-      </div>
-    </div>
-  </section>
-
-  <!-- <section class="hero is-small is-light">
-    <div class="hero-body">
-      <div class="container has-text-centered is-max-desktop">
-        <h2 class="title is-3">Quantitative Results</h2>
-
-      </div>
-    </div>
-  </section> -->
-
-  <section class="hero is-small">
-    <div class="hero-body">
-      <div class="container is-max-desktop">
-        <h2 class="title is-3 has-text-centered">Qualitative Results</h2>
-
-      </div>
-    </div>
-  </section>
-
-
-  <!-- Paper poster -->
-  <!-- <section class="hero is-small is-light">
-  <div class="hero-body">
-    <div class="container">
-      <h2 class="title">Poster</h2>
-
-      <iframe  src="static/pdfs/sample.pdf" width="100%" height="550">
-          </iframe>
-        
-      </div>
-    </div>
-  </section> -->
-  <!--End paper poster -->
-
-
-  <!--BibTex citation -->
-  <section class="section" id="BibTeX">
-    <div class="container is-max-desktop content">
-      <h2 class="title">BibTeX</h2>
-    </div>
-  </section>
-  <!--End BibTex citation -->
-
+    </section>
+  </main>
 
   <footer class="footer">
-    <div class="container">
-      <div class="columns is-centered">
-        <div class="column is-8">
-          <div class="content">
-
-            <p>
-              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template"
-                target="_blank">Academic Project Page Template</a> which was adopted from the <a
-                href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
-              You are free to borrow the source code of this website, we just ask that you link back to this page in the
-              footer. <br> This website is licensed under a <a rel="license"
-                href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
-                Commons Attribution-ShareAlike 4.0 International License</a>.
-            </p>
-
-          </div>
-        </div>
-      </div>
+    <div class="wrap">
+      NeuROAM · Institute for Experiential Robotics, Northeastern University ·
+      <a href="https://neufieldrobotics.github.io/NeuROAM/">neufieldrobotics.github.io/NeuROAM</a>
     </div>
   </footer>
 
-  <!-- Statcounter tracking code -->
-
-  <!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
-
-  <!-- End of Statcounter Code -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-  <script src="static/js/pointcloud-viewer.js"></script>
+  <script src="static/vendor/maplibre-gl.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./static/vendor/three.module.min.js",
+      "three/addons/": "./static/vendor/three/addons/"
+    }
+  }
+  </script>
+  <script type="module" src="static/js/site.js"></script>
 </body>
-
 </html>

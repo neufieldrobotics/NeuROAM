@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.glb.bak
+static/models/_payload_raw.glb
