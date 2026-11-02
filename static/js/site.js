@@ -174,27 +174,36 @@ function initHeroParallax() {
 }
 
 function renderPlatforms(platforms) {
-  document.getElementById("swatches").innerHTML = platforms.platforms
-    .map(
-      (p) =>
-        `<span class="swatch"><i style="background:${p.color}"></i>P${p.id} ${p.robot}</span>`
-    )
-    .join("");
-  document.getElementById("platformRows").innerHTML = platforms.platforms
-    .map(
-      (p) => `<tr>
+  const swatches = document.getElementById("swatches");
+  const rows = document.getElementById("platformRows");
+  const sensors = document.getElementById("sensorNote");
+  if (swatches) {
+    swatches.innerHTML = platforms.platforms
+      .map(
+        (p) =>
+          `<span class="swatch"><i style="background:${p.color}"></i>P${p.id} ${p.robot}</span>`
+      )
+      .join("");
+  }
+  if (rows) {
+    rows.innerHTML = platforms.platforms
+      .map(
+        (p) => `<tr>
         <td class="pid" style="color:${p.color}">P${p.id}</td>
         <td>${p.robot}</td>
         <td>${p.sequences}</td>
         <td>${p.duration_min} min</td>
         <td>${p.distance_km} km</td>
-        <td>${p.scenes}</td>
+        <td>${p.scenes || "—"}</td>
       </tr>`
-    )
-    .join("");
-  document.getElementById("sensorNote").innerHTML = platforms.sensors
-    .map((s) => `<span><b>${s.name}</b> ${s.rate}</span>`)
-    .join("");
+      )
+      .join("");
+  }
+  if (sensors) {
+    sensors.innerHTML = platforms.sensors
+      .map((s) => `<span><b>${s.name}</b> ${s.rate}</span>`)
+      .join("");
+  }
 }
 
 function initRobotGallery(platforms) {
@@ -950,19 +959,36 @@ async function main() {
     loadJSON("static/data/trajectories_3d.json"),
   ]);
 
-  renderHero(meta, platforms);
-  renderPlatforms(platforms);
-  initRobotGallery(platforms);
-  initPlayback(traj, sequences, comm);
-  initMap3D(traj3d);
-  initCAD();
-  initScenes(scenes, clips);
+  const steps = [
+    ["hero", () => renderHero(meta, platforms)],
+    ["platforms", () => renderPlatforms(platforms)],
+    ["gallery", () => initRobotGallery(platforms)],
+    ["playback", () => initPlayback(traj, sequences, comm)],
+    ["map3d", () => initMap3D(traj3d)],
+    ["cad", () => initCAD()],
+    ["scenes", () => initScenes(scenes, clips)],
+  ];
+  const failures = [];
+  for (const [name, run] of steps) {
+    try {
+      run();
+    } catch (err) {
+      console.error(`NeuROAM init failed at ${name}:`, err);
+      failures.push(`${name}: ${err.message}`);
+    }
+  }
+  if (failures.length) {
+    document.body.insertAdjacentHTML(
+      "afterbegin",
+      `<p style="margin:1rem;color:#c44">Some sections failed to load (${failures.join("; ")}). Hard-refresh the page (Ctrl/Cmd+Shift+R).</p>`
+    );
+  }
 }
 
 main().catch((err) => {
   console.error(err);
   document.body.insertAdjacentHTML(
     "afterbegin",
-    `<p style="margin:1rem;color:#c44">Failed to initialize page: ${err.message}</p>`
+    `<p style="margin:1rem;color:#c44">Failed to initialize page: ${err.message}. Try a hard refresh (Ctrl/Cmd+Shift+R).</p>`
   );
 });
