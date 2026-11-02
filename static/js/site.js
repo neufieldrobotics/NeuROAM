@@ -345,40 +345,96 @@ function pickClip(clips, t, sequences) {
   return byPayload || clips.clips[0];
 }
 
-function drawLinkBands(comm, tStart, tEnd, tNow) {
-  const host = document.getElementById("linkBands");
-  const pairs = [];
-  const seen = new Set();
+function linkStateAt(comm, tNow, a, b) {
   for (const l of comm.links) {
-    if (l.a === "BS" || l.b === "BS") continue;
-    const key = [l.a, l.b].sort().join("-");
-    if (!seen.has(key)) {
-      seen.add(key);
-      pairs.push(key);
-    }
+    if (tNow < l.t0 || tNow > l.t1) continue;
+    if ((l.a === a && l.b === b) || (l.a === b && l.b === a)) return l;
   }
-  pairs.sort();
-  const W = 900;
-  const rowH = 16;
-  const left = 70;
-  const H = 24 + pairs.length * rowH;
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  pairs.forEach((pair, i) => {
-    const y = 18 + i * rowH;
-    const [a, b] = pair.split("-");
-    svg += `<text x="0" y="${y + 10}" font-size="11" fill="currentColor" font-family="IBM Plex Sans, sans-serif">${a}–${b}</text>`;
-    for (const l of comm.links) {
-      const key = [l.a, l.b].sort().join("-");
-      if (key !== pair) continue;
-      const x0 = left + ((l.t0 - tStart) / (tEnd - tStart)) * (W - left);
-      const x1 = left + ((l.t1 - tStart) / (tEnd - tStart)) * (W - left);
-      svg += `<rect x="${x0}" y="${y}" width="${Math.max(1, x1 - x0)}" height="11" fill="${STATE_COLOR[l.state] || "#ccc"}" opacity="${l.state === "unknown" ? 0.45 : 0.9}"/>`;
-    }
+  return null;
+}
+
+function drawLinkGraph(comm, tNow) {
+  const host = document.getElementById("linkBands");
+  if (!host) return;
+
+  const robots = ["P0", "P1", "P2", "P3", "P4"];
+  const W = 520;
+  const H = 360;
+  const cx = 250;
+  const cy = 188;
+  const R = 118;
+  const pos = { BS: { x: cx, y: cy } };
+  robots.forEach((id, i) => {
+    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / robots.length;
+    pos[id] = { x: cx + Math.cos(ang) * R, y: cy + Math.sin(ang) * R };
   });
-  const xNow = left + ((tNow - tStart) / (tEnd - tStart)) * (W - left);
-  svg += `<line x1="${xNow}" y1="0" x2="${xNow}" y2="${H}" stroke="currentColor" stroke-width="1.2"/>`;
-  svg += `</svg>`;
-  host.innerHTML = svg;
+
+  const pairs = [];
+  for (let i = 0; i < robots.length; i++) {
+    for (let j = i + 1; j < robots.length; j++) pairs.push([robots[i], robots[j]]);
+    pairs.push([robots[i], "BS"]);
+  }
+
+  let edges = "";
+  let directN = 0;
+  let meshN = 0;
+  for (const [a, b] of pairs) {
+    const hit = linkStateAt(comm, tNow, a, b);
+    const state = hit?.state || "unknown";
+    if (state === "unknown" || state === "no_link") {
+      const pa = pos[a];
+      const pb = pos[b];
+      edges += `<line class="link-edge link-idle" x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" />`;
+      continue;
+    }
+    const pa = pos[a];
+    const pb = pos[b];
+    const cls = state === "direct" ? "link-direct" : "link-mesh";
+    if (state === "direct") directN += 1;
+    else meshN += 1;
+    const midX = (pa.x + pb.x) / 2;
+    const midY = (pa.y + pb.y) / 2;
+    // slight arc so crossing edges read clearer
+    const dx = pb.x - pa.x;
+    const dy = pb.y - pa.y;
+    const nx = -dy * 0.08;
+    const ny = dx * 0.08;
+    const qx = midX + nx;
+    const qy = midY + ny;
+    edges += `<path class="link-edge ${cls}" d="M ${pa.x} ${pa.y} Q ${qx} ${qy} ${pb.x} ${pb.y}" />`;
+  }
+
+  const nodeSvg = Object.entries(pos)
+    .map(([id, p]) => {
+      const isBS = id === "BS";
+      const color = isBS ? "#8a8a85" : COLORS[Number(id.slice(1))];
+      const robot = isBS ? "Base" : comm.meta.nodes[id]?.robot || id;
+      const r = isBS ? 16 : 18;
+      const labelY = isBS ? p.y + 32 : p.y + (p.y < cy ? -28 : 30);
+      return `<g class="link-node" data-id="${id}">
+        <circle cx="${p.x}" cy="${p.y}" r="${r + 5}" class="link-node-halo" style="stroke:${color}" />
+        <circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" />
+        <text x="${p.x}" y="${p.y + 4}" text-anchor="middle" class="link-node-id">${id}</text>
+        <text x="${p.x}" y="${labelY}" text-anchor="middle" class="link-node-label">${robot}</text>
+      </g>`;
+    })
+    .join("");
+
+  host.innerHTML = `
+    <div class="link-graph-head">
+      <strong>Radio topology</strong>
+      <span>${directN} direct · ${meshN} mesh</span>
+    </div>
+    <svg class="link-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Circular radio link graph">
+      <circle cx="${cx}" cy="${cy}" r="${R}" class="link-orbit" />
+      ${edges}
+      ${nodeSvg}
+    </svg>
+    <div class="link-legend">
+      <span><i class="lg-direct"></i>direct</span>
+      <span><i class="lg-mesh"></i>mesh route</span>
+      <span><i class="lg-idle"></i>no link</span>
+    </div>`;
 }
 
 function fullTrailCoords(points) {
@@ -491,7 +547,7 @@ function initPlayback(traj, sequences, comm) {
         }
       }
     }
-    drawLinkBands(comm, tStart, tEnd, tNow);
+    drawLinkGraph(comm, tNow);
     window.dispatchEvent(new CustomEvent("neuroam-time", { detail: tNow }));
   }
 

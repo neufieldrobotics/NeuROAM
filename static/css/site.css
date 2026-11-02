@@ -667,17 +667,147 @@ tr:last-child td {
   min-width: 11rem;
 }
 
-.link-bands {
+.link-graph-wrap {
   border: 1px solid var(--rule);
   background: var(--panel);
-  padding: 0.75rem;
-  overflow-x: auto;
+  padding: 0.75rem 0.85rem 0.9rem;
+  margin-top: 0.75rem;
 }
 
-.link-bands svg {
-  width: 100%;
+.link-graph-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  margin-bottom: 0.35rem;
+}
+
+.link-graph-head strong {
+  font-size: 0.9rem;
+}
+
+.link-graph-head span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.link-graph {
+  width: min(100%, 520px);
   height: auto;
   display: block;
+  margin: 0 auto;
+  color: var(--ink);
+}
+
+.link-orbit {
+  fill: none;
+  stroke: var(--rule);
+  stroke-dasharray: 3 5;
+  opacity: 0.9;
+}
+
+.link-edge {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.link-edge.link-idle {
+  stroke: color-mix(in srgb, var(--rule) 85%, var(--ink));
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.link-edge.link-direct {
+  stroke: var(--p0);
+  stroke-width: 3.2;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--p0) 45%, transparent));
+  animation: linkPulse 1.8s ease-in-out infinite;
+}
+
+.link-edge.link-mesh {
+  stroke: var(--p2);
+  stroke-width: 2.2;
+  stroke-dasharray: 7 5;
+  opacity: 0.85;
+  animation: linkDash 1.4s linear infinite;
+}
+
+.link-node-halo {
+  fill: none;
+  stroke-width: 1.2;
+  opacity: 0.35;
+}
+
+.link-node-id {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+.link-node-label {
+  fill: var(--ink2);
+  font-size: 11px;
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+.link-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  justify-content: center;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.link-legend i {
+  display: inline-block;
+  width: 1.35rem;
+  height: 0;
+  border-top: 2.5px solid;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.link-legend .lg-direct {
+  border-color: var(--p0);
+}
+
+.link-legend .lg-mesh {
+  border-color: var(--p2);
+  border-top-style: dashed;
+}
+
+.link-legend .lg-idle {
+  border-color: color-mix(in srgb, var(--rule) 70%, var(--ink));
+  opacity: 0.7;
+}
+
+@keyframes linkPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes linkDash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-edge.link-direct,
+  .link-edge.link-mesh {
+    animation: none !important;
+  }
 }
 
 .video-block {
