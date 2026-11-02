@@ -29,6 +29,14 @@ const CAD_COLORS = {
   enclosure: "#c7c7be",
 };
 
+const ROBOT_MODELS = {
+  0: { file: "static/models/robots/spot.glb", label: "Spot" },
+  1: { file: "static/models/robots/scout.glb", label: "Scout" },
+  2: { file: "static/models/robots/hunter.glb", label: "Hunter" },
+  3: { file: "static/models/robots/go2w.glb", label: "Go2-W" },
+  4: { file: "static/models/robots/go2.glb", label: "Go2" },
+};
+
 async function loadJSON(path) {
   const res = await fetch(path);
   if (!res.ok) throw new Error(`Failed to load ${path}`);
@@ -37,13 +45,15 @@ async function loadJSON(path) {
 
 function fmtClock(t) {
   const d = new Date(t * 1000);
-  return d.toLocaleTimeString("en-US", {
-    timeZone: "America/New_York",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }) + " EST";
+  return (
+    d.toLocaleTimeString("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }) + " EST"
+  );
 }
 
 function initTheme() {
@@ -75,9 +85,8 @@ function renderHero(meta, platforms) {
   document.getElementById("heroStats").innerHTML = stats
     .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`)
     .join("");
-  const authors = meta.authors.join(", ");
   document.getElementById("authors").innerHTML =
-    `<div>${authors}</div><div class="affil">${meta.affiliation}</div>`;
+    `<div>${meta.authors.join(", ")}</div><div class="affil">${meta.affiliation}</div>`;
 }
 
 function renderPlatforms(platforms) {
@@ -104,6 +113,87 @@ function renderPlatforms(platforms) {
     .join(" · ");
 }
 
+function mountMiniViewer(host, url, colorHex) {
+  const scene = new THREE.Scene();
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  scene.background = new THREE.Color(dark ? 0x242421 : 0xf0efeb);
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
+  camera.position.set(1.2, 0.7, 1.4);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  host.appendChild(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.domElement.style.display = "block";
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.95);
+  dir.position.set(2, 3, 2);
+  scene.add(dir);
+
+  const resize = () => {
+    const w = Math.max(host.clientWidth, 1);
+    const h = Math.max(host.clientHeight, 1);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  };
+  resize();
+
+  new GLTFLoader().load(url, (gltf) => {
+    const root = gltf.scene;
+    scene.add(root);
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(colorHex),
+        metalness: 0.15,
+        roughness: 0.5,
+      });
+    });
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3()).length();
+    const center = box.getCenter(new THREE.Vector3());
+    root.position.sub(center);
+    camera.position.set(size * 0.9, size * 0.55, size * 1.05);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    resize();
+  });
+
+  window.addEventListener("neuroam-theme", () => {
+    const d = document.documentElement.getAttribute("data-theme") === "dark";
+    scene.background = new THREE.Color(d ? 0x242421 : 0xf0efeb);
+  });
+  window.addEventListener("resize", resize);
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+}
+
+function initRobotGallery(platforms) {
+  const grid = document.getElementById("robotGrid");
+  grid.innerHTML = platforms.platforms
+    .map(
+      (p) => `<article class="robot-card">
+        <div class="rv" id="robotView${p.id}"></div>
+        <div class="meta">
+          <strong style="color:${p.color}">P${p.id} ${p.robot}</strong>
+          <span>${p.lidar} · ${p.distance_km} km</span>
+        </div>
+      </article>`
+    )
+    .join("");
+  for (const p of platforms.platforms) {
+    const model = ROBOT_MODELS[p.id];
+    mountMiniViewer(document.getElementById(`robotView${p.id}`), model.file, p.color);
+  }
+}
+
 function interpolatePose(points, t) {
   if (!points.length) return null;
   if (t <= points[0][0]) return points[0];
@@ -118,12 +208,7 @@ function interpolatePose(points, t) {
   const a = points[lo];
   const b = points[hi];
   const u = (t - a[0]) / Math.max(1e-6, b[0] - a[0]);
-  return [
-    t,
-    a[1] + (b[1] - a[1]) * u,
-    a[2] + (b[2] - a[2]) * u,
-    a[3] + (b[3] - a[3]) * u,
-  ];
+  return [t, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
 }
 
 function placeAt(sequences, t) {
@@ -145,142 +230,20 @@ function linksAt(comm, t, node) {
   return heard.length ? heard.join(", ") : "none";
 }
 
-function initPlayback(traj, sequences, comm) {
-  const tStart = Math.min(sequences.t_start, comm.meta.t_start);
-  const tEnd = Math.max(sequences.t_end, comm.meta.t_end);
-  let t = tStart;
-  let playing = false;
-  let raf = null;
-  let lastTs = null;
-
-  const map = new maplibregl.Map({
-    container: "map",
-    style: getComputedStyle(document.documentElement).getPropertyValue("--map-style").trim(),
-    center: [-71.0885, 42.3395],
-    zoom: 15.4,
-    attributionControl: true,
-  });
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-
-  const markers = {};
-  const panels = document.getElementById("robotPanels");
-  panels.innerHTML = "";
-
-  for (const [pid, payload] of Object.entries(traj.payloads)) {
-    const el = document.createElement("div");
-    el.className = "robot-panel";
-    el.style.borderLeftColor = payload.color;
-    el.innerHTML = `<strong style="color:${payload.color}">P${pid} ${payload.robot}</strong>
-      <div class="meta" data-meta></div>
-      <div class="links" data-links></div>`;
-    panels.appendChild(el);
-
-    const mEl = document.createElement("div");
-    mEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${payload.color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)`;
-    markers[pid] = {
-      marker: new maplibregl.Marker({ element: mEl }).setLngLat([-71.0885, 42.3395]).addTo(map),
-      panel: el,
-      points: payload.points,
-    };
+function pickClip(clips, t, sequences) {
+  // Prefer a clip whose payload is active and place matches.
+  const active = [];
+  for (let p = 0; p < 5; p++) {
+    const place = placeAt(sequences.payloads[String(p)].sequences, t);
+    if (place !== "—") active.push({ p, place });
   }
-
-  function ensureLayers() {
-    for (const [pid, payload] of Object.entries(traj.payloads)) {
-      const id = `trail-${pid}`;
-      if (map.getSource(id)) continue;
-      map.addSource(id, {
-        type: "geojson",
-        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } },
-      });
-      map.addLayer({
-        id,
-        type: "line",
-        source: id,
-        paint: {
-          "line-color": payload.color,
-          "line-width": 2.5,
-          "line-opacity": 0.85,
-        },
-      });
-    }
+  if (!active.length) return clips.clips[0];
+  for (const a of active) {
+    const hit = clips.clips.find((c) => c.payload === a.p && c.place === a.place);
+    if (hit) return hit;
   }
-
-  function trailCoords(points, tNow) {
-    const coords = [];
-    for (const p of points) {
-      if (p[0] > tNow) break;
-      if (tNow - p[0] > 180) continue; // last 3 minutes
-      coords.push([p[2], p[1]]);
-    }
-    return coords;
-  }
-
-  function update(tNow) {
-    t = tNow;
-    document.getElementById("clockLabel").textContent = fmtClock(tNow);
-    const frac = (tNow - tStart) / (tEnd - tStart);
-    document.getElementById("timeSlider").value = String(Math.round(frac * 1000));
-    if (!map.isStyleLoaded()) return;
-    ensureLayers();
-    for (const [pid, state] of Object.entries(markers)) {
-      const pose = interpolatePose(state.points, tNow);
-      const seqs = sequences.payloads[pid].sequences;
-      if (pose) {
-        state.marker.setLngLat([pose[2], pose[1]]);
-        state.panel.querySelector("[data-meta]").textContent =
-          `${placeAt(seqs, tNow)} · z ${pose[3].toFixed(1)} m`;
-      } else {
-        state.panel.querySelector("[data-meta]").textContent = "outside released span";
-      }
-      state.panel.querySelector("[data-links]").textContent =
-        `hears: ${linksAt(comm, tNow, `P${pid}`)}`;
-      const src = map.getSource(`trail-${pid}`);
-      if (src) {
-        src.setData({
-          type: "Feature",
-          geometry: { type: "LineString", coordinates: trailCoords(state.points, tNow) },
-        });
-      }
-    }
-    drawLinkBands(comm, tStart, tEnd, tNow);
-    window.dispatchEvent(new CustomEvent("neuroam-time", { detail: tNow }));
-  }
-
-  map.on("load", () => update(tStart));
-
-  document.getElementById("timeSlider").addEventListener("input", (e) => {
-    const u = Number(e.target.value) / 1000;
-    update(tStart + u * (tEnd - tStart));
-  });
-
-  const playBtn = document.getElementById("playBtn");
-  playBtn.addEventListener("click", () => {
-    playing = !playing;
-    playBtn.textContent = playing ? "Pause" : "Play";
-    lastTs = null;
-    if (playing) {
-      const loop = (ts) => {
-        if (!playing) return;
-        if (lastTs != null) {
-          const speed = Number(document.getElementById("speedSelect").value);
-          t += ((ts - lastTs) / 1000) * speed;
-          if (t > tEnd) t = tStart;
-          update(t);
-        }
-        lastTs = ts;
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-    } else if (raf) cancelAnimationFrame(raf);
-  });
-
-  window.addEventListener("neuroam-theme", () => {
-    const style = getComputedStyle(document.documentElement).getPropertyValue("--map-style").trim();
-    map.setStyle(style);
-    map.once("style.load", () => update(t));
-  });
-
-  return { tStart, tEnd, update };
+  const byPayload = clips.clips.find((c) => c.payload === active[0].p);
+  return byPayload || clips.clips[0];
 }
 
 function drawLinkBands(comm, tStart, tEnd, tNow) {
@@ -319,6 +282,158 @@ function drawLinkBands(comm, tStart, tEnd, tNow) {
   host.innerHTML = svg;
 }
 
+function initPlayback(traj, sequences, comm, clips) {
+  const tStart = Math.min(sequences.t_start, comm.meta.t_start);
+  const tEnd = Math.max(sequences.t_end, comm.meta.t_end);
+  let t = tStart;
+  let playing = false;
+  let raf = null;
+  let lastTs = null;
+  let currentClipId = null;
+
+  const map = new maplibregl.Map({
+    container: "map",
+    style: getComputedStyle(document.documentElement).getPropertyValue("--map-style").trim(),
+    center: [-71.0885, 42.3395],
+    zoom: 15.4,
+    attributionControl: true,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+  const markers = {};
+  const panels = document.getElementById("robotPanels");
+  panels.innerHTML = "";
+  const camReel = document.getElementById("camReel");
+  const camLabel = document.getElementById("camReelLabel");
+
+  for (const [pid, payload] of Object.entries(traj.payloads)) {
+    const el = document.createElement("div");
+    el.className = "robot-panel";
+    el.style.borderLeftColor = payload.color;
+    el.innerHTML = `<strong style="color:${payload.color}">P${pid} ${payload.robot}</strong>
+      <div class="meta" data-meta></div>
+      <div class="links" data-links></div>`;
+    panels.appendChild(el);
+    const mEl = document.createElement("div");
+    mEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${payload.color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)`;
+    markers[pid] = {
+      marker: new maplibregl.Marker({ element: mEl }).setLngLat([-71.0885, 42.3395]).addTo(map),
+      panel: el,
+      points: payload.points,
+    };
+  }
+
+  function ensureLayers() {
+    for (const [pid, payload] of Object.entries(traj.payloads)) {
+      const id = `trail-${pid}`;
+      if (map.getSource(id)) continue;
+      map.addSource(id, {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } },
+      });
+      map.addLayer({
+        id,
+        type: "line",
+        source: id,
+        paint: { "line-color": payload.color, "line-width": 2.5, "line-opacity": 0.85 },
+      });
+    }
+  }
+
+  function trailCoords(points, tNow) {
+    const coords = [];
+    for (const p of points) {
+      if (p[0] > tNow) break;
+      if (tNow - p[0] > 180) continue;
+      coords.push([p[2], p[1]]);
+    }
+    return coords;
+  }
+
+  function syncCamReel(tNow) {
+    const clip = pickClip(clips, tNow, sequences);
+    if (!clip) return;
+    camLabel.textContent = clip.title;
+    if (clip.id !== currentClipId) {
+      currentClipId = clip.id;
+      camReel.src = clip.file;
+      camReel.play().catch(() => {});
+    }
+  }
+
+  function update(tNow) {
+    t = tNow;
+    document.getElementById("clockLabel").textContent = fmtClock(tNow);
+    const frac = (tNow - tStart) / (tEnd - tStart);
+    document.getElementById("timeSlider").value = String(Math.round(frac * 1000));
+    if (map.isStyleLoaded()) {
+      ensureLayers();
+      for (const [pid, state] of Object.entries(markers)) {
+        const pose = interpolatePose(state.points, tNow);
+        const seqs = sequences.payloads[pid].sequences;
+        if (pose) {
+          state.marker.setLngLat([pose[2], pose[1]]);
+          state.panel.querySelector("[data-meta]").textContent =
+            `${placeAt(seqs, tNow)} · z ${pose[3].toFixed(1)} m`;
+        } else {
+          state.panel.querySelector("[data-meta]").textContent = "outside released span";
+        }
+        state.panel.querySelector("[data-links]").textContent =
+          `hears: ${linksAt(comm, tNow, `P${pid}`)}`;
+        const src = map.getSource(`trail-${pid}`);
+        if (src) {
+          src.setData({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: trailCoords(state.points, tNow) },
+          });
+        }
+      }
+    }
+    drawLinkBands(comm, tStart, tEnd, tNow);
+    syncCamReel(tNow);
+    window.dispatchEvent(new CustomEvent("neuroam-time", { detail: tNow }));
+  }
+
+  map.on("load", () => update(tStart));
+  document.getElementById("timeSlider").addEventListener("input", (e) => {
+    const u = Number(e.target.value) / 1000;
+    update(tStart + u * (tEnd - tStart));
+  });
+
+  const playBtn = document.getElementById("playBtn");
+  playBtn.addEventListener("click", () => {
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+    lastTs = null;
+    if (playing) {
+      const loop = (ts) => {
+        if (!playing) return;
+        if (lastTs != null) {
+          const speed = Number(document.getElementById("speedSelect").value);
+          t += ((ts - lastTs) / 1000) * speed;
+          if (t > tEnd) t = tStart;
+          update(t);
+        }
+        lastTs = ts;
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      camReel.play().catch(() => {});
+    } else if (raf) {
+      cancelAnimationFrame(raf);
+      camReel.pause();
+    }
+  });
+
+  window.addEventListener("neuroam-theme", () => {
+    const style = getComputedStyle(document.documentElement).getPropertyValue("--map-style").trim();
+    map.setStyle(style);
+    map.once("style.load", () => update(t));
+  });
+
+  return { tStart, tEnd };
+}
+
 function initGantt(sequences) {
   const canvas = document.getElementById("gantt");
   const ctx = canvas.getContext("2d");
@@ -330,7 +445,6 @@ function initGantt(sequences) {
     return {
       ink: styles.getPropertyValue("--ink").trim(),
       ink2: styles.getPropertyValue("--ink2").trim(),
-      rule: styles.getPropertyValue("--rule").trim(),
       panel: styles.getPropertyValue("--panel").trim(),
     };
   }
@@ -349,7 +463,6 @@ function initGantt(sequences) {
     const t0 = sequences.t_start;
     const t1 = sequences.t_end;
     const span = t1 - t0;
-
     let isec = 0;
     let exp = 0;
     for (let p = 0; p < 5; p++) {
@@ -367,11 +480,6 @@ function initGantt(sequences) {
           if (s.place === "ISEC") isec += 1;
           if (s.place === "EXP") exp += 1;
         }
-      }
-      // height ribbon using z_range as a simple bar under each sequence
-      for (const s of payload.sequences) {
-        const x = left + ((s.start - t0) / span) * (W - left - 16);
-        const w = Math.max(2, ((s.end - s.start) / span) * (W - left - 16));
         const h = Math.min(10, (s.z_range_m / 30) * 10);
         ctx.fillStyle = COLORS[p];
         ctx.globalAlpha = 0.55;
@@ -379,19 +487,15 @@ function initGantt(sequences) {
         ctx.globalAlpha = 1;
       }
     }
-
     const xNow = left + ((tNow - t0) / span) * (W - left - 16);
     ctx.strokeStyle = c.ink;
     ctx.beginPath();
     ctx.moveTo(xNow, 8);
     ctx.lineTo(xNow, H - 24);
     ctx.stroke();
-
     ctx.fillStyle = c.ink2;
     ctx.font = "12px 'IBM Plex Sans', sans-serif";
     ctx.fillText(`At playhead: ${isec} in ISEC · ${exp} in EXP`, left, H - 8);
-
-    // place legend
     let lx = left;
     for (const p of sequences.places) {
       ctx.fillStyle = p.color;
@@ -400,7 +504,6 @@ function initGantt(sequences) {
       ctx.fillText(p.id, lx + 14, 17);
       lx += ctx.measureText(p.id).width + 28;
     }
-
     document.getElementById("ganttNote").textContent =
       `Playhead ${fmtClock(tNow)} · ${isec} robot${isec === 1 ? "" : "s"} in ISEC, ${exp} in EXP.`;
   }
@@ -408,25 +511,25 @@ function initGantt(sequences) {
   draw(sequences.t_start);
   window.addEventListener("neuroam-time", (e) => draw(e.detail));
   window.addEventListener("neuroam-theme", () => draw(currentT));
-  return { draw };
 }
 
 function initCAD() {
   const host = document.getElementById("cad");
-  const legend = document.getElementById("cadLegend");
-  legend.innerHTML = Object.entries(CAD_COLORS)
+  document.getElementById("cadLegend").innerHTML = Object.entries(CAD_COLORS)
     .map(([k, v]) => `<span><i style="background:${v}"></i>${k}</span>`)
     .join("");
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
   camera.position.set(0.7, 0.45, 0.85);
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.localClippingEnabled = true;
   host.appendChild(renderer.domElement);
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   renderer.domElement.style.display = "block";
+
   const syncBg = () => {
     const dark = document.documentElement.getAttribute("data-theme") === "dark";
     const hex = dark ? 0x242421 : 0xf0efeb;
@@ -438,22 +541,33 @@ function initCAD() {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.target.set(0, 0, 0);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const key = new THREE.DirectionalLight(0xffffff, 1.15);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
   key.position.set(2.5, 4, 2);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xb8c4ff, 0.55);
+  const fill = new THREE.DirectionalLight(0xb8c4ff, 0.5);
   fill.position.set(-2, 1.5, -1);
   scene.add(fill);
 
   const clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10);
-  renderer.localClippingEnabled = true;
+  const clipHelper = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      color: 0x2a78d6,
+      transparent: true,
+      opacity: 0.12,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    })
+  );
+  clipHelper.visible = false;
+  scene.add(clipHelper);
 
   const groupRoots = {};
   const centroids = {};
   let modelSize = 1;
+  let clipMin = -0.3;
+  let clipMax = 0.3;
   const root = new THREE.Group();
   scene.add(root);
 
@@ -479,20 +593,24 @@ function initCAD() {
       const center = box.getCenter(new THREE.Vector3());
       gltf.scene.position.sub(center);
       modelSize = size;
+      clipMax = sizeVec.x * 0.55 + 0.02;
+      clipMin = -sizeVec.x * 0.55 - 0.02;
+      clipPlane.set(new THREE.Vector3(-1, 0, 0), clipMax);
+      clipHelper.scale.set(sizeVec.z * 1.4, sizeVec.y * 1.4, 1);
+      clipHelper.rotation.y = Math.PI / 2;
 
       gltf.scene.traverse((obj) => {
         if (!obj.isMesh) return;
         const name = (obj.name || "enclosure").toLowerCase();
         const gkey = Object.keys(CAD_COLORS).find((k) => name === k) || "enclosure";
-        if (obj.geometry && !obj.geometry.attributes.normal) {
-          obj.geometry.computeVertexNormals();
-        }
+        if (obj.geometry && !obj.geometry.attributes.normal) obj.geometry.computeVertexNormals();
         obj.material = new THREE.MeshStandardMaterial({
           color: new THREE.Color(CAD_COLORS[gkey]),
           metalness: 0.1,
           roughness: 0.48,
           side: THREE.DoubleSide,
           clippingPlanes: [clipPlane],
+          clipShadows: true,
         });
         const c = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
         centroids[gkey] = c;
@@ -508,8 +626,6 @@ function initCAD() {
       camera.position.set(dist * 0.85, dist * 0.55, dist * 0.95);
       camera.updateProjectionMatrix();
       controls.target.set(0, 0, 0);
-      controls.minDistance = size * 0.4;
-      controls.maxDistance = size * 10;
       controls.update();
       resize();
     },
@@ -524,8 +640,12 @@ function initCAD() {
 
   document.getElementById("clip").addEventListener("input", (e) => {
     const u = Number(e.target.value) / 100;
-    clipPlane.constant = 10 - u * 10.3;
+    // 0 = no clip (plane beyond +X), 1 = cut through past center toward -X
+    clipPlane.constant = clipMax + u * (clipMin - clipMax);
+    clipHelper.position.set(clipPlane.constant, 0, 0);
+    clipHelper.visible = u > 0.01;
   });
+
   document.getElementById("explode").addEventListener("input", (e) => {
     const amount = Number(e.target.value) / 100;
     const explodeDist = modelSize * 0.5;
@@ -561,13 +681,190 @@ function initCAD() {
   })();
 }
 
+function initMap3D(traj3d, sequences) {
+  const host = document.getElementById("map3d");
+  const scene = new THREE.Scene();
+  const syncBg = () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    scene.background = new THREE.Color(dark ? 0x1c1c1a : 0xf6f5f2);
+  };
+  syncBg();
+  window.addEventListener("neuroam-theme", syncBg);
 
-function renderScenes(scenes) {
-  document.getElementById("scenesGrid").innerHTML = scenes.scenes
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+  camera.position.set(80, 70, 90);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  host.appendChild(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.domElement.style.display = "block";
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const grid = new THREE.GridHelper(200, 40, 0x888888, 0x444444);
+  grid.position.y = 0;
+  scene.add(grid);
+
+  // Center trajectories around origin for framing
+  let cx = 0;
+  let cy = 0;
+  let n = 0;
+  for (const payload of Object.values(traj3d.payloads)) {
+    for (const p of payload.points) {
+      cx += p[1];
+      cy += p[2];
+      n += 1;
+    }
+  }
+  cx /= Math.max(n, 1);
+  cy /= Math.max(n, 1);
+
+  const lineGroups = {};
+  const markers = {};
+  for (const [pid, payload] of Object.entries(traj3d.payloads)) {
+    const positions = [];
+    for (const p of payload.points) {
+      positions.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    const mat = new THREE.LineBasicMaterial({ color: payload.color, linewidth: 2 });
+    const line = new THREE.Line(geo, mat);
+    scene.add(line);
+    lineGroups[pid] = { points: payload.points, line };
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(1.2, 16, 16),
+      new THREE.MeshStandardMaterial({ color: payload.color })
+    );
+    scene.add(m);
+    markers[pid] = m;
+  }
+
+  const t0 = sequences.t_start;
+  const t1 = sequences.t_end;
+  let playing = false;
+  let t = t0;
+  let last = null;
+
+  function setTime(tNow) {
+    t = tNow;
+    const frac = (tNow - t0) / (t1 - t0);
+    document.getElementById("map3dSlider").value = String(Math.round(frac * 1000));
+    for (const [pid, state] of Object.entries(lineGroups)) {
+      const pose = interpolatePose(state.points, tNow);
+      if (!pose) {
+        markers[pid].visible = false;
+        continue;
+      }
+      markers[pid].visible = true;
+      markers[pid].position.set(pose[1] - cx, pose[3] * 1.5, pose[2] - cy);
+      // progressive line draw by shrinking draw range
+      let count = 0;
+      for (const p of state.points) {
+        if (p[0] > tNow) break;
+        count += 1;
+      }
+      state.line.geometry.setDrawRange(0, Math.max(count, 2));
+    }
+  }
+
+  document.getElementById("map3dSlider").addEventListener("input", (e) => {
+    const u = Number(e.target.value) / 1000;
+    setTime(t0 + u * (t1 - t0));
+  });
+  document.getElementById("map3dPlay").addEventListener("click", () => {
+    playing = !playing;
+    document.getElementById("map3dPlay").textContent = playing ? "Pause height" : "Play height";
+    last = null;
+  });
+
+  // Follow main playback when available
+  window.addEventListener("neuroam-time", (e) => {
+    if (!playing) setTime(e.detail);
+  });
+
+  function resize() {
+    const w = Math.max(host.clientWidth, 1);
+    const h = Math.max(host.clientHeight, 1);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  setTime(t0);
+
+  (function loop(ts) {
+    requestAnimationFrame(loop);
+    if (playing) {
+      if (last != null) {
+        t += ((ts - last) / 1000) * 30;
+        if (t > t1) t = t0;
+        setTime(t);
+      }
+      last = ts;
+    } else {
+      last = null;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+}
+
+function initScenes(scenes, clips) {
+  const video = document.getElementById("sceneVideo");
+  const caption = document.getElementById("sceneCaption");
+  const thumbs = document.getElementById("sceneThumbs");
+  let idx = 0;
+
+  function show(i) {
+    idx = (i + clips.clips.length) % clips.clips.length;
+    const c = clips.clips[idx];
+    video.src = c.file;
+    caption.textContent = c.title;
+    video.play().catch(() => {});
+    thumbs.querySelectorAll(".scene-thumb").forEach((el, j) => {
+      el.classList.toggle("active", j === idx);
+    });
+  }
+
+  thumbs.innerHTML = clips.clips
+    .map(
+      (c, i) => `<button type="button" class="scene-thumb" data-i="${i}">
+        <video muted playsinline preload="metadata" src="${c.file}"></video>
+        <span style="color:${COLORS[c.payload]}">${c.title}</span>
+      </button>`
+    )
+    .join("");
+  thumbs.addEventListener("click", (e) => {
+    const btn = e.target.closest(".scene-thumb");
+    if (!btn) return;
+    show(Number(btn.dataset.i));
+  });
+  video.addEventListener("ended", () => show(idx + 1));
+  // Auto-advance every 9s even if looped
+  setInterval(() => {
+    if (document.visibilityState === "visible") show(idx + 1);
+  }, 9000);
+  show(0);
+
+  // Still scenes: crossfade by cycling opacity highlight
+  const grid = document.getElementById("scenesGrid");
+  grid.innerHTML = scenes.scenes
     .map(
       (s) => `<figure class="scene"><img src="${s.file}" alt="${s.caption}" loading="lazy"><figcaption>${s.caption}</figcaption></figure>`
     )
     .join("");
+  const stills = [...grid.querySelectorAll(".scene")];
+  let sIdx = 0;
+  setInterval(() => {
+    stills.forEach((el, i) => {
+      el.style.outline = i === sIdx ? `2px solid ${COLORS[sIdx % 5]}` : "none";
+      el.style.opacity = i === sIdx ? "1" : "0.72";
+    });
+    sIdx = (sIdx + 1) % stills.length;
+  }, 2500);
 }
 
 function renderBenchmark(bench) {
@@ -592,9 +889,8 @@ function renderBenchmark(bench) {
     `<tr><th>P</th><th>Sequence</th>${methods.map((m) => `<th>${m}</th>`).join("")}</tr>`;
 
   const filters = document.getElementById("payloadFilters");
-  const allBtn = `<button type="button" data-p="all" class="active">All</button>`;
   filters.innerHTML =
-    allBtn +
+    `<button type="button" data-p="all" class="active">All</button>` +
     [0, 1, 2, 3, 4]
       .map((p) => `<button type="button" data-p="${p}" style="color:${COLORS[p]}">P${p}</button>`)
       .join("");
@@ -606,7 +902,7 @@ function renderBenchmark(bench) {
         const cells = methods
           .map((m) => {
             const v = r.values[m] || "—";
-            const muted = /fail|—/.test(v) || Number(v) > 5;
+            const muted = v === "fail" || v === "—" || Number(v) > 5;
             return `<td class="${muted ? "muted-cell" : ""}">${v}</td>`;
           })
           .join("");
@@ -626,7 +922,7 @@ function renderBenchmark(bench) {
 
 async function main() {
   initTheme();
-  const [meta, platforms, traj, sequences, comm, scenes, bench] = await Promise.all([
+  const [meta, platforms, traj, sequences, comm, scenes, bench, clips, traj3d] = await Promise.all([
     loadJSON("static/data/meta.json"),
     loadJSON("static/data/platforms.json"),
     loadJSON("static/data/trajectories.json"),
@@ -634,14 +930,18 @@ async function main() {
     loadJSON("static/data/comm.json"),
     loadJSON("static/data/scenes.json"),
     loadJSON("static/data/benchmark.json"),
+    loadJSON("static/data/clips.json"),
+    loadJSON("static/data/trajectories_3d.json"),
   ]);
 
   renderHero(meta, platforms);
   renderPlatforms(platforms);
-  initPlayback(traj, sequences, comm);
+  initRobotGallery(platforms);
+  initPlayback(traj, sequences, comm, clips);
+  initMap3D(traj3d, sequences);
   initGantt(sequences);
   initCAD();
-  renderScenes(scenes);
+  initScenes(scenes, clips);
   renderBenchmark(bench);
 }
 

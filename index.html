@@ -21,8 +21,10 @@
       <nav class="nav" aria-label="Sections">
         <a href="#platforms">Platforms</a>
         <a href="#playback">Playback</a>
+        <a href="#maps">Maps</a>
         <a href="#sync">Sync</a>
         <a href="#payload">Payload</a>
+        <a href="#scenes">Scenes</a>
         <a href="#results">Results</a>
         <a href="#data">Data</a>
         <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">Dark</button>
@@ -41,12 +43,12 @@
           <div class="cta-row">
             <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Dataset</a>
             <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Code</a>
-            <a class="btn secondary" href="#playback">Interactive map</a>
+            <a class="btn secondary" href="#playback">Live playback</a>
           </div>
           <div class="authors" id="authors"></div>
         </div>
         <figure class="hero-visual">
-          <img src="static/images/teaser.webp" alt="Three NeuROAM robots on campus with overlaid trajectories" width="1920" height="1200">
+          <img src="static/images/teaser.webp" alt="Three NeuROAM robots with campus trajectories" width="1600" height="900">
         </figure>
       </div>
     </section>
@@ -74,6 +76,10 @@
           </table>
         </div>
         <p class="note" id="sensorNote"></p>
+
+        <h3 class="subhead">Meet the platforms</h3>
+        <p class="note" style="margin-top:0">Orbit each robot. Spot and Go2 meshes from MuJoCo Menagerie; Scout and Hunter are simplified chassis models.</p>
+        <div class="robot-grid" id="robotGrid"></div>
       </div>
     </section>
 
@@ -81,32 +87,78 @@
       <div class="wrap">
         <div class="section-head">
           <h2>Simultaneous playback</h2>
-          <p>All five payloads on one UTC clock. Scrub the day; trails, place, height, and radio links update together.</p>
+          <p>One shared clock drives the map, robot panels, radio links, and the camera reel.</p>
         </div>
-        <div class="controls">
-          <button type="button" id="playBtn">Play</button>
-          <label class="clock-label" id="clockLabel">—</label>
-          <input type="range" id="timeSlider" min="0" max="1000" value="0" aria-label="Time scrubber">
-          <label>Speed
-            <select id="speedSelect" aria-label="Playback speed">
-              <option value="1">1×</option>
-              <option value="5" selected>5×</option>
-              <option value="20">20×</option>
-              <option value="60">60×</option>
-            </select>
-          </label>
+
+        <div class="player-shell">
+          <div class="player-toolbar controls">
+            <button type="button" id="playBtn">Play</button>
+            <label class="clock-label" id="clockLabel">—</label>
+            <input type="range" id="timeSlider" min="0" max="1000" value="0" aria-label="Time scrubber">
+            <label>Speed
+              <select id="speedSelect" aria-label="Playback speed">
+                <option value="1">1×</option>
+                <option value="5" selected>5×</option>
+                <option value="20">20×</option>
+                <option value="60">60×</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="playback-layout">
+            <div class="player-stage">
+              <div id="map" role="img" aria-label="Campus map with robot trajectories"></div>
+              <div class="link-bands" id="linkBands" aria-label="Inter-robot link timeline"></div>
+            </div>
+            <div class="side-stack">
+              <div class="side-panels" id="robotPanels"></div>
+              <div class="cam-reel">
+                <div class="cam-reel-head">
+                  <strong>Camera reel</strong>
+                  <span class="note" id="camReelLabel">—</span>
+                </div>
+                <video id="camReel" muted playsinline loop></video>
+              </div>
+            </div>
+          </div>
+          <p class="note">Link states: direct · mesh · none · unknown. The reel follows the active payload clip for the current place.</p>
         </div>
-        <div class="playback-layout">
-          <div id="map" role="img" aria-label="Campus map with robot trajectories"></div>
-          <div class="side-panels" id="robotPanels"></div>
+      </div>
+    </section>
+
+    <section id="maps">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Campus maps · 3D / 4D</h2>
+          <p>Ground-truth trajectories in height, floor stacks, and space–time coverage of the same day.</p>
         </div>
-        <div class="link-bands" id="linkBands" aria-label="Inter-robot link timeline"></div>
-        <p class="note">Link states: direct · mesh route · no link · unknown. Trace at 5 s resolution from the released radio logs.</p>
-        <div class="video-block">
-          <p class="note" style="margin-bottom:0.5rem">Recording of the same day (optional):</p>
-          <video controls preload="metadata" poster="static/images/teaser.webp">
-            <source src="static/video/comm_video.mp4" type="video/mp4">
-          </video>
+        <div class="maps-grid">
+          <div>
+            <div class="cad-ui">
+              <button type="button" id="map3dPlay">Play height</button>
+              <label>Time <input type="range" id="map3dSlider" min="0" max="1000" value="0"></label>
+            </div>
+            <div id="map3d" aria-label="3D trajectory height map"></div>
+            <p class="note">Local ground-truth frame: X–Y campus, Z height. Payload colours match the paper.</p>
+          </div>
+          <div class="map-cards">
+            <figure class="map-card">
+              <img src="static/images/maps/21_floor_stack_3d.gif" alt="Animated 3D floor stack of trajectories">
+              <figcaption>4D floor stack — trajectories by building level</figcaption>
+            </figure>
+            <figure class="map-card">
+              <img src="static/images/maps/20_space_time_cube.gif" alt="Animated space-time cube">
+              <figcaption>Space–time cube — position over the collection day</figcaption>
+            </figure>
+            <figure class="map-card">
+              <img src="static/images/maps/18_campus_map_topdown.webp" alt="Campus top-down map">
+              <figcaption>Campus top-down with all five routes</figcaption>
+            </figure>
+            <figure class="map-card">
+              <img src="static/images/maps/15_connectivity_map.webp" alt="Radio connectivity map">
+              <figcaption>Mesh-radio connectivity on the campus map</figcaption>
+            </figure>
+          </div>
         </div>
       </div>
     </section>
@@ -120,7 +172,7 @@
         <div class="sync-grid">
           <div>
             <canvas id="gantt" width="900" height="420" aria-label="Sequence timeline by payload"></canvas>
-            <p class="note" id="ganttNote">Hover or scrub playback to see how many robots are in ISEC and EXP.</p>
+            <p class="note" id="ganttNote">Scrub playback to see how many robots are in ISEC and EXP.</p>
           </div>
           <div class="sync-chain">
             <strong>Clock chain</strong>
@@ -167,10 +219,18 @@
     <section id="scenes">
       <div class="wrap">
         <div class="section-head">
-          <h2>Scenes</h2>
-          <p>Where C-SLAM is hard: basements, glass, crowds, elevators, stairs.</p>
+          <h2>Scenes in motion</h2>
+          <p>Live clips from each payload across campus, buildings, basements, and elevators.</p>
         </div>
-        <div class="scenes-grid" id="scenesGrid"></div>
+        <div class="scene-player">
+          <div class="scene-stage">
+            <video id="sceneVideo" controls muted playsinline autoplay loop></video>
+            <div class="scene-caption" id="sceneCaption"></div>
+          </div>
+          <div class="scene-thumbs" id="sceneThumbs"></div>
+        </div>
+        <h3 class="subhead">Hard cases</h3>
+        <div class="scenes-grid playing" id="scenesGrid"></div>
       </div>
     </section>
 
@@ -198,7 +258,7 @@
           </table>
         </div>
         <p class="note" id="benchNote"></p>
-        <h3 style="margin:1.5rem 0 0.75rem;font-size:1.05rem;font-weight:600;">Per-sequence ATE</h3>
+        <h3 class="subhead">Per-sequence ATE</h3>
         <div class="filters" id="payloadFilters"></div>
         <div class="table-wrap">
           <table>

@@ -459,6 +459,7 @@ tr:last-child td {
 #gantt {
   width: 100%;
   height: auto;
+  min-height: 280px;
   border: 1px solid var(--rule);
   background: var(--panel);
   display: block;
@@ -651,5 +652,232 @@ tr:last-child td {
 
   .wrap {
     width: min(var(--max), calc(100% - 1.5rem));
+  }
+}
+
+.subhead {
+  margin: 1.75rem 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.robot-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.robot-card {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.robot-card .rv {
+  height: 160px;
+  background: var(--panel-2);
+}
+
+.robot-card .meta {
+  padding: 0.55rem 0.65rem 0.7rem;
+  border-top: 1px solid var(--rule);
+}
+
+.robot-card .meta strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.robot-card .meta span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.player-shell {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 0.85rem;
+}
+
+.player-toolbar {
+  margin: 0 0 0.75rem;
+}
+
+.player-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.cam-reel {
+  border: 1px solid var(--rule);
+  background: #0d0d0c;
+  overflow: hidden;
+}
+
+.cam-reel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.82rem;
+}
+
+.cam-reel video {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: block;
+  object-fit: cover;
+  background: #000;
+}
+
+.maps-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1rem;
+}
+
+#map3d {
+  height: 480px;
+  border: 1px solid var(--rule);
+  background: var(--panel-2);
+}
+
+.map-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.map-card {
+  margin: 0;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.map-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--panel-2);
+}
+
+.map-card figcaption {
+  padding: 0.45rem 0.55rem;
+  font-size: 0.78rem;
+  color: var(--ink2);
+}
+
+.scene-player {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.scene-stage {
+  border: 1px solid var(--rule);
+  background: #0d0d0c;
+  overflow: hidden;
+}
+
+.scene-stage video {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: block;
+  object-fit: cover;
+  background: #000;
+}
+
+.scene-caption {
+  padding: 0.55rem 0.75rem;
+  background: var(--panel);
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--ink2);
+}
+
+.scene-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.scene-thumb {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 0.35rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.scene-thumb.active {
+  border-color: var(--ink);
+}
+
+.scene-thumb video,
+.scene-thumb img {
+  width: 88px;
+  height: 56px;
+  object-fit: cover;
+  background: #000;
+}
+
+.scene-thumb span {
+  font-size: 0.8rem;
+  color: var(--ink2);
+}
+
+.scenes-grid.playing .scene {
+  position: relative;
+}
+
+.scenes-grid.playing .scene::after {
+  content: "live still";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.15rem 0.35rem;
+}
+
+@media (max-width: 960px) {
+  .robot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .maps-grid,
+  .scene-player {
+    grid-template-columns: 1fr;
+  }
+  .map-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  #map3d {
+    height: 360px;
   }
 }
