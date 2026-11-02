@@ -21,11 +21,8 @@
       <nav class="nav" aria-label="Sections">
         <a href="#platforms">Platforms</a>
         <a href="#playback">Playback</a>
-        <a href="#maps">Maps</a>
-        <a href="#sync">Sync</a>
         <a href="#payload">Payload</a>
         <a href="#scenes">Scenes</a>
-        <a href="#results">Results</a>
         <a href="#data">Data</a>
         <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">Dark</button>
       </nav>
@@ -33,36 +30,33 @@
   </header>
 
   <main id="top">
-    <section class="hero" id="hero">
+    <section class="hero hero-academic" id="hero">
       <div class="hero-stage" aria-hidden="true">
         <div class="hero-parallax" id="heroParallax">
-          <div class="hero-layer hero-layer-map" data-depth="0.12">
+          <div class="hero-layer hero-layer-map" data-depth="0.1">
             <img class="hero-map hero-map-light" src="static/images/hero_map.webp" alt="" width="2400" height="1350" decoding="async">
             <img class="hero-map hero-map-dark" src="static/images/hero_map_dark.webp" alt="" width="2400" height="1350" decoding="async">
           </div>
-          <div class="hero-layer hero-layer-orb" data-depth="0.2"></div>
-          <div class="hero-layer hero-layer-traces" data-depth="0.32">
-            <svg class="hero-traces" id="heroTraces" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
-          </div>
-          <div class="hero-layer hero-layer-scan" data-depth="0.16"></div>
         </div>
         <div class="hero-scrim"></div>
       </div>
       <div class="wrap hero-content">
+        <p class="kicker">Dataset paper companion</p>
         <h1>NeuROAM</h1>
-        <p class="lede">Five heterogeneous robots, one GNSS-disciplined clock, campus-scale ground truth, and the radio links they actually had.</p>
+        <p class="paper-title">A Large-Scale Multi-Robot SLAM Dataset for Heterogeneous Platforms in Dynamic Environments</p>
+        <p class="lede">Five robots, one GNSS-disciplined clock, campus-scale ground truth, and the mesh-radio links measured during collection.</p>
         <div class="cta-row">
           <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Dataset</a>
           <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Code</a>
-          <a class="btn secondary" href="#playback">Live playback</a>
+          <a class="btn secondary" href="#playback">Playback</a>
         </div>
+        <p class="affil" id="affiliation"></p>
       </div>
     </section>
 
     <section class="hero-meta">
       <div class="wrap">
         <div class="stats" id="heroStats"></div>
-        <div class="authors" id="authors"></div>
       </div>
     </section>
 
@@ -70,37 +64,18 @@
       <div class="wrap">
         <div class="section-head">
           <h2>Platforms</h2>
-          <p>Same payload on five robots. Paper numbering: P0 Spot through P4 Go2.</p>
+          <p>Same sensing payload on five chassis. Select a platform to inspect coverage.</p>
         </div>
-        <div class="payload-swatches" id="swatches"></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Payload</th>
-                <th>Robot</th>
-                <th>LiDAR</th>
-                <th>Sequences</th>
-                <th>Duration</th>
-                <th>Distance</th>
-              </tr>
-            </thead>
-            <tbody id="platformRows"></tbody>
-          </table>
-        </div>
+        <div class="player-select" id="playerSelect" role="listbox" aria-label="Choose a platform"></div>
         <p class="note" id="sensorNote"></p>
-
-        <h3 class="subhead">Meet the platforms</h3>
-        <p class="note" style="margin-top:0">Spot and Go2 field photos (Wikimedia); Scout, Hunter, and Go2-W show the NeuROAM payload from the paper teaser.</p>
-        <div class="robot-grid" id="robotGrid"></div>
       </div>
     </section>
 
     <section id="playback">
       <div class="wrap">
         <div class="section-head">
-          <h2>Simultaneous playback</h2>
-          <p>One shared clock drives the map, robot panels, radio links, and the camera reel.</p>
+          <h2>Synchronized playback</h2>
+          <p>One shared clock. Neutral ground-truth paths first, then payload-coloured trails on the 2D map and 3D height view.</p>
         </div>
 
         <div class="player-shell">
@@ -118,87 +93,20 @@
             </label>
           </div>
 
-          <div class="playback-layout">
-            <div class="player-stage">
+          <div class="map-duo">
+            <div class="map-pane">
+              <div class="map-pane-label">2D campus map</div>
               <div id="map" role="img" aria-label="Campus map with robot trajectories"></div>
-              <div class="link-bands" id="linkBands" aria-label="Inter-robot link timeline"></div>
             </div>
-            <div class="side-stack">
-              <div class="side-panels" id="robotPanels"></div>
-              <div class="cam-reel">
-                <div class="cam-reel-head">
-                  <strong>Camera reel</strong>
-                  <span class="note" id="camReelLabel">—</span>
-                </div>
-                <video id="camReel" muted playsinline loop></video>
-              </div>
+            <div class="map-pane">
+              <div class="map-pane-label">3D height · ground truth</div>
+              <div id="map3d" aria-label="3D trajectory height map"></div>
             </div>
           </div>
-          <p class="note">Link states: direct · mesh · none · unknown. The reel follows the active payload clip for the current place.</p>
-        </div>
-      </div>
-    </section>
 
-    <section id="maps">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Campus maps · 3D / 4D</h2>
-          <p>Ground-truth trajectories in height, floor stacks, and space–time coverage of the same day.</p>
-        </div>
-        <div class="maps-grid">
-          <div>
-            <div class="cad-ui">
-              <button type="button" id="map3dPlay">Play height</button>
-              <label>Time <input type="range" id="map3dSlider" min="0" max="1000" value="0"></label>
-            </div>
-            <div id="map3d" aria-label="3D trajectory height map"></div>
-            <p class="note">Local ground-truth frame: X–Y campus, Z height. Payload colours match the paper.</p>
-          </div>
-          <div class="map-cards">
-            <figure class="map-card">
-              <img src="static/images/maps/21_floor_stack_3d.gif" alt="Animated 3D floor stack of trajectories">
-              <figcaption>4D floor stack — trajectories by building level</figcaption>
-            </figure>
-            <figure class="map-card">
-              <img src="static/images/maps/20_space_time_cube.gif" alt="Animated space-time cube">
-              <figcaption>Space–time cube — position over the collection day</figcaption>
-            </figure>
-            <figure class="map-card">
-              <img src="static/images/maps/18_campus_map_topdown.webp" alt="Campus top-down map">
-              <figcaption>Campus top-down with all five routes</figcaption>
-            </figure>
-            <figure class="map-card">
-              <img src="static/images/maps/15_connectivity_map.webp" alt="Radio connectivity map">
-              <figcaption>Mesh-radio connectivity on the campus map</figcaption>
-            </figure>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="sync">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Time synchronization</h2>
-          <p>Every sensor on every robot shares one GNSS-disciplined clock.</p>
-        </div>
-        <div class="sync-grid">
-          <div>
-            <canvas id="gantt" width="900" height="420" aria-label="Sequence timeline by payload"></canvas>
-            <p class="note" id="ganttNote">Scrub playback to see how many robots are in ISEC and EXP.</p>
-          </div>
-          <div class="sync-chain">
-            <strong>Clock chain</strong>
-            <ol>
-              <li>ZED-F9T feeds PPS and NMEA to the Ouster, which stamps in hardware.</li>
-              <li>PPS to the camera sync board triggers both cameras together.</li>
-              <li>Host time stamps the images. Receive time − header stamp stays within ~1 ms of GNSS.</li>
-              <li>Ouster IMU lag 0.6–0.9 ms; images ~35 ms; clouds 112–127 ms (stamp is the start of the 100 ms sweep).</li>
-            </ol>
-            <figure class="sync-photo">
-              <img src="static/images/hw_sync_board.webp" alt="Camera synchronization board" width="1100" height="1095">
-            </figure>
-          </div>
+          <div class="status-strip" id="robotPanels" aria-label="Platform status"></div>
+          <div class="link-bands" id="linkBands" aria-label="Inter-robot link timeline"></div>
+          <p class="note">Grey = full ground-truth routes. Coloured trails advance with the shared clock. Link band: direct · mesh · none.</p>
         </div>
       </div>
     </section>
@@ -222,7 +130,7 @@
           <div class="cad-side">
             <img src="static/images/hw_payload.webp" alt="Rendered payload exterior">
             <img src="static/images/hw_layers.webp" alt="Internal payload levels">
-            <p class="note">Stereo cameras, Ouster LiDAR, VectorNav IMU, ZED-F9T GNSS, Doodle Labs radio, Jetson Orin Nano.</p>
+            <p class="note">Stereo FLIR cameras, Ouster LiDAR, VectorNav IMU, u-blox ZED-F9T, Doodle Labs radio, Jetson Orin Nano.</p>
           </div>
         </div>
         <div class="legend" id="cadLegend"></div>
@@ -242,42 +150,15 @@
           </div>
           <div class="scene-thumbs" id="sceneThumbs"></div>
         </div>
-        <h3 class="subhead">Hard cases</h3>
-        <div class="scenes-grid playing" id="scenesGrid"></div>
-      </div>
-    </section>
 
-    <section id="results">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Benchmark</h2>
-          <p>Nine systems on 22 sequences. No method is both complete and accurate on NeuROAM.</p>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Input</th>
-                <th>Method</th>
-                <th>Full</th>
-                <th>Partial</th>
-                <th>Fail</th>
-                <th>ATE [m]</th>
-                <th>RPE<sub>t</sub> [m]</th>
-                <th>RPE<sub>r</sub> [°]</th>
-              </tr>
-            </thead>
-            <tbody id="benchSummary"></tbody>
-          </table>
-        </div>
-        <p class="note" id="benchNote"></p>
-        <h3 class="subhead">Per-sequence ATE</h3>
-        <div class="filters" id="payloadFilters"></div>
-        <div class="table-wrap">
-          <table>
-            <thead id="benchDetailHead"></thead>
-            <tbody id="benchDetail"></tbody>
-          </table>
+        <h3 class="subhead">Hard cases</h3>
+        <p class="note" style="margin-top:0">Conditions that break naive multi-robot SLAM assumptions. Select a case to inspect.</p>
+        <div class="hard-cases" id="hardCases">
+          <div class="hard-nav" id="hardNav" role="tablist" aria-label="Hard cases"></div>
+          <figure class="hard-stage">
+            <img id="hardImage" alt="" loading="lazy">
+            <figcaption id="hardCaption"></figcaption>
+          </figure>
         </div>
       </div>
     </section>

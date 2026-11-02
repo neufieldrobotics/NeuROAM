@@ -599,8 +599,8 @@ tr:last-child td {
 }
 
 #map {
-  height: 520px;
-  border: 1px solid var(--rule);
+  height: 100%;
+  min-height: 320px;
   background: var(--panel-2);
 }
 
@@ -1099,8 +1099,8 @@ tr:last-child td {
 }
 
 #map3d {
-  height: 480px;
-  border: 1px solid var(--rule);
+  height: 100%;
+  min-height: 320px;
   background: var(--panel-2);
 }
 
@@ -1228,5 +1228,252 @@ tr:last-child td {
   }
   #map3d {
     height: 360px;
+  }
+}
+
+/* Academic hero */
+.hero-academic {
+  height: auto;
+  min-height: 0;
+  padding: 5.5rem 0 3rem;
+  align-items: center;
+}
+
+.hero-academic .hero-map {
+  opacity: 0.42;
+  animation: none;
+  transform: scale(1.04);
+}
+
+.hero-academic .hero-scrim {
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--surface) 94%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 78%, transparent) 42%,
+      color-mix(in srgb, var(--surface) 55%, transparent) 100%
+    ),
+    linear-gradient(to top, var(--surface) 0%, transparent 55%);
+}
+
+.hero-academic h1 {
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  letter-spacing: -0.03em;
+}
+
+.paper-title {
+  margin: 0.85rem 0 0;
+  max-width: 40rem;
+  font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.hero-academic .lede {
+  margin-top: 0.85rem;
+  font-size: 0.98rem;
+  max-width: 36rem;
+}
+
+.hero-academic .affil {
+  margin-top: 1.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Choose-your-player */
+.player-select {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.player-card {
+  appearance: none;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.player-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--rule));
+}
+
+.player-card.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.player-visual {
+  position: relative;
+  height: 150px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.player-visual img,
+.player-cad {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-meta {
+  padding: 0.65rem 0.7rem 0.8rem;
+  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.player-meta strong {
+  font-size: 0.92rem;
+}
+
+.player-meta span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.player-scenes {
+  line-height: 1.35;
+}
+
+/* Synced map duo */
+.map-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.map-pane {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  overflow: hidden;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-pane-label {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+#map,
+#map3d {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+}
+
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.status-chip {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent, var(--rule));
+  background: var(--panel);
+  padding: 0.45rem 0.65rem;
+  min-width: 9rem;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.status-chip strong {
+  font-size: 0.85rem;
+}
+
+.status-chip span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* Hard cases browser */
+.hard-cases {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.9fr) 1.6fr;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  align-items: start;
+}
+
+.hard-nav {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hard-nav button {
+  appearance: none;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--ink2);
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.hard-nav button:hover {
+  color: var(--ink);
+}
+
+.hard-nav button.active {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--panel-2);
+}
+
+.hard-stage {
+  margin: 0;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.hard-stage img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--panel-2);
+}
+
+.hard-stage figcaption {
+  padding: 0.7rem 0.85rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 960px) {
+  .player-select {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .map-duo,
+  .hard-cases {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .player-select {
+    grid-template-columns: 1fr;
   }
 }

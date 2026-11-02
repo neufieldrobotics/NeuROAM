@@ -29,13 +29,35 @@ const CAD_COLORS = {
   enclosure: "#c7c7be",
 };
 
-const ROBOT_PHOTOS = {
-  0: { file: "static/images/robots/spot.webp", alt: "Boston Dynamics Spot in the field" },
-  1: { file: "static/images/robots/scout.webp", alt: "AgileX Scout with NeuROAM payload" },
-  2: { file: "static/images/robots/hunter.webp", alt: "AgileX Hunter SE with NeuROAM payload" },
-  3: { file: "static/images/robots/go2w.webp", alt: "Unitree Go2-W with NeuROAM payload" },
-  4: { file: "static/images/robots/go2.webp", alt: "Unitree Go2 quadruped" },
+const CAD_LABELS = {
+  lidar: "Ouster OS1 LiDAR",
+  cameras: "FLIR Blackfly S (stereo)",
+  imu: "VectorNav VN-100",
+  gnss: "u-blox ZED-F9T",
+  radio: "Doodle Labs RM-2450",
+  compute: "Jetson Orin Nano",
+  power: "Power distribution",
+  display: "Status display",
+  enclosure: "Enclosure",
 };
+
+const ROBOT_PHOTOS = {
+  0: { file: "static/images/robots/spot.webp", alt: "Boston Dynamics Spot" },
+  1: { file: "static/images/robots/scout.webp", alt: "AgileX Scout Mini" },
+  2: { file: "static/images/robots/hunter.webp", alt: "AgileX Hunter SE" },
+  3: { file: "static/images/robots/go2w.webp", alt: "Unitree Go2-W" },
+  4: { file: "static/images/robots/go2.webp", alt: "Unitree Go2" },
+};
+
+const ROBOT_MODELS = {
+  0: "static/models/robots/spot.glb",
+  1: "static/models/robots/scout.glb",
+  2: "static/models/robots/hunter.glb",
+  3: "static/models/robots/go2w.glb",
+  4: "static/models/robots/go2.glb",
+};
+
+const GT_COLOR = "#9a9a94";
 
 async function loadJSON(path) {
   const res = await fetch(path);
@@ -85,46 +107,8 @@ function renderHero(meta, platforms) {
   document.getElementById("heroStats").innerHTML = stats
     .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`)
     .join("");
-  document.getElementById("authors").innerHTML =
-    `<div>${meta.authors.join(", ")}</div><div class="affil">${meta.affiliation}</div>`;
-}
-
-async function initHeroTraces() {
-  const svg = document.getElementById("heroTraces");
-  if (!svg) return;
-  try {
-    const data = await loadJSON("static/data/hero_paths.json");
-    const ns = "http://www.w3.org/2000/svg";
-    svg.setAttribute("viewBox", data.viewBox.join(" "));
-    const frag = document.createDocumentFragment();
-    data.paths.forEach((p, i) => {
-      const delay = `${0.15 + i * 0.35}s`;
-      const glow = document.createElementNS(ns, "path");
-      glow.setAttribute("d", p.d);
-      glow.setAttribute("class", "trace-glow");
-      glow.setAttribute("stroke", p.color);
-      glow.style.setProperty("--trace", p.color);
-
-      const base = document.createElementNS(ns, "path");
-      base.setAttribute("d", p.d);
-      base.setAttribute("class", "trace trace-draw");
-      base.setAttribute("stroke", p.color);
-      base.style.setProperty("--trace", p.color);
-      base.style.setProperty("--delay", delay);
-
-      const run = document.createElementNS(ns, "path");
-      run.setAttribute("d", p.d);
-      run.setAttribute("class", "trace trace-run");
-      run.setAttribute("stroke", p.color);
-      run.style.setProperty("--trace", p.color);
-      run.style.setProperty("--delay", delay);
-
-      frag.append(glow, base, run);
-    });
-    svg.appendChild(frag);
-  } catch (err) {
-    console.warn("Hero traces unavailable", err);
-  }
+  const aff = document.getElementById("affiliation");
+  if (aff) aff.textContent = meta.affiliation || "";
 }
 
 function initHeroParallax() {
@@ -189,48 +173,124 @@ function initHeroParallax() {
   onScroll();
 }
 
-function renderPlatforms(platforms) {
-  document.getElementById("swatches").innerHTML = platforms.platforms
-    .map(
-      (p) =>
-        `<span class="swatch"><i style="background:${p.color}"></i>P${p.id} ${p.robot}</span>`
-    )
+function mountMiniViewer(host, url, colorHex) {
+  if (!host || !url) return;
+  const scene = new THREE.Scene();
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  scene.background = new THREE.Color(dark ? 0x242421 : 0xf0efeb);
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
+  camera.position.set(1.2, 0.7, 1.4);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  host.appendChild(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.domElement.style.display = "block";
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+  dir.position.set(2, 3, 2);
+  scene.add(dir);
+
+  const resize = () => {
+    const w = Math.max(host.clientWidth, 1);
+    const h = Math.max(host.clientHeight, 1);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  };
+  resize();
+
+  new GLTFLoader().load(url, (gltf) => {
+    const root = gltf.scene;
+    scene.add(root);
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(colorHex),
+        metalness: 0.12,
+        roughness: 0.52,
+      });
+    });
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3()).length();
+    const center = box.getCenter(new THREE.Vector3());
+    root.position.sub(center);
+    camera.position.set(size * 0.95, size * 0.55, size * 1.1);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    resize();
+  });
+
+  window.addEventListener("neuroam-theme", () => {
+    const d = document.documentElement.getAttribute("data-theme") === "dark";
+    scene.background = new THREE.Color(d ? 0x242421 : 0xf0efeb);
+  });
+  window.addEventListener("resize", resize);
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+}
+
+function initPlayerSelect(platforms) {
+  const host = document.getElementById("playerSelect");
+  if (!host) return;
+  let selected = 0;
+
+  host.innerHTML = platforms.platforms
+    .map((p) => {
+      const photo = ROBOT_PHOTOS[p.id];
+      return `<button type="button" class="player-card" data-id="${p.id}" style="--accent:${p.color}" role="option" aria-selected="false">
+        <div class="player-visual">
+          <img src="${photo.file}" alt="${photo.alt}" loading="lazy" />
+          <div class="player-cad" id="playerCad${p.id}" hidden></div>
+        </div>
+        <div class="player-meta">
+          <strong style="color:${p.color}">P${p.id} · ${p.robot}</strong>
+          <span>${p.sequences} seq · ${p.duration_min} min · ${p.distance_km} km</span>
+          <span class="player-scenes">${p.scenes}</span>
+        </div>
+      </button>`;
+    })
     .join("");
-  document.getElementById("platformRows").innerHTML = platforms.platforms
-    .map(
-      (p) => `<tr>
-        <td class="pid" style="color:${p.color}">P${p.id}</td>
-        <td>${p.robot}</td>
-        <td>${p.lidar}</td>
-        <td>${p.sequences}</td>
-        <td>${p.duration_min} min</td>
-        <td>${p.distance_km} km</td>
-      </tr>`
-    )
-    .join("");
+
+  function select(id) {
+    selected = id;
+    host.querySelectorAll(".player-card").forEach((btn) => {
+      const on = Number(btn.dataset.id) === selected;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+      const cad = btn.querySelector(".player-cad");
+      const img = btn.querySelector("img");
+      if (!cad || !img) return;
+      if (on) {
+        img.hidden = true;
+        cad.hidden = false;
+        if (!cad.dataset.ready) {
+          cad.dataset.ready = "1";
+          mountMiniViewer(cad, ROBOT_MODELS[id], COLORS[id]);
+        }
+      } else {
+        img.hidden = false;
+        cad.hidden = true;
+      }
+    });
+  }
+
+  host.addEventListener("click", (e) => {
+    const btn = e.target.closest(".player-card");
+    if (!btn) return;
+    select(Number(btn.dataset.id));
+  });
+
   document.getElementById("sensorNote").textContent = platforms.sensors
     .map((s) => `${s.name} ${s.rate}`)
     .join(" · ");
-}
-
-function initRobotGallery(platforms) {
-  const grid = document.getElementById("robotGrid");
-  grid.innerHTML = platforms.platforms
-    .map((p) => {
-      const photo = ROBOT_PHOTOS[p.id];
-      const delay = (p.id * 1.7).toFixed(1);
-      return `<article class="robot-card" style="--accent:${p.color}; --kb-delay:${delay}s">
-        <div class="rv">
-          <img class="robot-photo" src="${photo.file}" alt="${photo.alt}" loading="lazy" width="1000" height="750" />
-          <span class="rv-glow" aria-hidden="true"></span>
-        </div>
-        <div class="meta">
-          <strong style="color:${p.color}">P${p.id} ${p.robot}</strong>
-          <span>${p.lidar} · ${p.distance_km} km</span>
-        </div>
-      </article>`;
-    })
-    .join("");
+  select(0);
 }
 
 function interpolatePose(points, t) {
@@ -321,14 +381,26 @@ function drawLinkBands(comm, tStart, tEnd, tNow) {
   host.innerHTML = svg;
 }
 
-function initPlayback(traj, sequences, comm, clips) {
+function fullTrailCoords(points) {
+  return points.map((p) => [p[2], p[1]]);
+}
+
+function liveTrailCoords(points, tNow) {
+  const coords = [];
+  for (const p of points) {
+    if (p[0] > tNow) break;
+    coords.push([p[2], p[1]]);
+  }
+  return coords;
+}
+
+function initPlayback(traj, sequences, comm) {
   const tStart = Math.min(sequences.t_start, comm.meta.t_start);
   const tEnd = Math.max(sequences.t_end, comm.meta.t_end);
   let t = tStart;
   let playing = false;
   let raf = null;
   let lastTs = null;
-  let currentClipId = null;
 
   const map = new maplibregl.Map({
     container: "map",
@@ -342,61 +414,54 @@ function initPlayback(traj, sequences, comm, clips) {
   const markers = {};
   const panels = document.getElementById("robotPanels");
   panels.innerHTML = "";
-  const camReel = document.getElementById("camReel");
-  const camLabel = document.getElementById("camReelLabel");
 
   for (const [pid, payload] of Object.entries(traj.payloads)) {
     const el = document.createElement("div");
-    el.className = "robot-panel";
-    el.style.borderLeftColor = payload.color;
-    el.innerHTML = `<strong style="color:${payload.color}">P${pid} ${payload.robot}</strong>
-      <div class="meta" data-meta></div>
-      <div class="links" data-links></div>`;
+    el.className = "status-chip";
+    el.style.setProperty("--accent", payload.color);
+    el.innerHTML = `<strong style="color:${payload.color}">P${pid} ${payload.robot}</strong><span data-meta>—</span>`;
     panels.appendChild(el);
     const mEl = document.createElement("div");
-    mEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${payload.color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)`;
+    mEl.style.cssText = `width:12px;height:12px;border-radius:50%;background:${payload.color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2)`;
     markers[pid] = {
       marker: new maplibregl.Marker({ element: mEl }).setLngLat([-71.0885, 42.3395]).addTo(map),
       panel: el,
       points: payload.points,
+      color: payload.color,
     };
   }
 
   function ensureLayers() {
     for (const [pid, payload] of Object.entries(traj.payloads)) {
-      const id = `trail-${pid}`;
-      if (map.getSource(id)) continue;
-      map.addSource(id, {
-        type: "geojson",
-        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } },
-      });
-      map.addLayer({
-        id,
-        type: "line",
-        source: id,
-        paint: { "line-color": payload.color, "line-width": 2.5, "line-opacity": 0.85 },
-      });
-    }
-  }
-
-  function trailCoords(points, tNow) {
-    const coords = [];
-    for (const p of points) {
-      if (p[0] > tNow) break;
-      if (tNow - p[0] > 180) continue;
-      coords.push([p[2], p[1]]);
-    }
-    return coords;
-  }
-
-  function syncCamReel(tNow) {
-    const clip = pickClip(clips, tNow, sequences);
-    if (!clip) return;
-    camLabel.textContent = clip.title;
-    if (clip.id !== currentClipId) {
-      currentClipId = clip.id;
-      camReel.src = clip.file;
-      camReel.play().catch(() => {});
+      const gtId = `gt-${pid}`;
+      const liveId = `trail-${pid}`;
+      if (!map.getSource(gtId)) {
+        map.addSource(gtId, {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: fullTrailCoords(payload.points) },
+          },
+        });
+        map.addLayer({
+          id: gtId,
+          type: "line",
+          source: gtId,
+          paint: { "line-color": GT_COLOR, "line-width": 2.2, "line-opacity": 0.45 },
+        });
+      }
+      if (!map.getSource(liveId)) {
+        map.addSource(liveId, {
+          type: "geojson",
+          data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } },
+        });
+        map.addLayer({
+          id: liveId,
+          type: "line",
+          source: liveId,
+          paint: { "line-color": payload.color, "line-width": 3, "line-opacity": 0.92 },
+        });
+      }
     }
   }
 
@@ -413,23 +478,20 @@ function initPlayback(traj, sequences, comm, clips) {
         if (pose) {
           state.marker.setLngLat([pose[2], pose[1]]);
           state.panel.querySelector("[data-meta]").textContent =
-            `${placeAt(seqs, tNow)} · z ${pose[3].toFixed(1)} m`;
+            `${placeAt(seqs, tNow)} · ${pose[3].toFixed(1)} m`;
         } else {
-          state.panel.querySelector("[data-meta]").textContent = "outside released span";
+          state.panel.querySelector("[data-meta]").textContent = "outside span";
         }
-        state.panel.querySelector("[data-links]").textContent =
-          `hears: ${linksAt(comm, tNow, `P${pid}`)}`;
         const src = map.getSource(`trail-${pid}`);
         if (src) {
           src.setData({
             type: "Feature",
-            geometry: { type: "LineString", coordinates: trailCoords(state.points, tNow) },
+            geometry: { type: "LineString", coordinates: liveTrailCoords(state.points, tNow) },
           });
         }
       }
     }
     drawLinkBands(comm, tStart, tEnd, tNow);
-    syncCamReel(tNow);
     window.dispatchEvent(new CustomEvent("neuroam-time", { detail: tNow }));
   }
 
@@ -457,10 +519,8 @@ function initPlayback(traj, sequences, comm, clips) {
         raf = requestAnimationFrame(loop);
       };
       raf = requestAnimationFrame(loop);
-      camReel.play().catch(() => {});
     } else if (raf) {
       cancelAnimationFrame(raf);
-      camReel.pause();
     }
   });
 
@@ -555,7 +615,7 @@ function initGantt(sequences) {
 function initCAD() {
   const host = document.getElementById("cad");
   document.getElementById("cadLegend").innerHTML = Object.entries(CAD_COLORS)
-    .map(([k, v]) => `<span><i style="background:${v}"></i>${k}</span>`)
+    .map(([k, v]) => `<span><i style="background:${v}"></i>${CAD_LABELS[k] || k}</span>`)
     .join("");
 
   const scene = new THREE.Scene();
@@ -720,8 +780,9 @@ function initCAD() {
   })();
 }
 
-function initMap3D(traj3d, sequences) {
+function initMap3D(traj3d) {
   const host = document.getElementById("map3d");
+  if (!host) return;
   const scene = new THREE.Scene();
   const syncBg = () => {
     const dark = document.documentElement.getAttribute("data-theme") === "dark";
@@ -742,10 +803,8 @@ function initMap3D(traj3d, sequences) {
   controls.enableDamping = true;
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
   const grid = new THREE.GridHelper(200, 40, 0x888888, 0x444444);
-  grid.position.y = 0;
   scene.add(grid);
 
-  // Center trajectories around origin for framing
   let cx = 0;
   let cy = 0;
   let n = 0;
@@ -766,12 +825,24 @@ function initMap3D(traj3d, sequences) {
     for (const p of payload.points) {
       positions.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    const mat = new THREE.LineBasicMaterial({ color: payload.color, linewidth: 2 });
-    const line = new THREE.Line(geo, mat);
-    scene.add(line);
-    lineGroups[pid] = { points: payload.points, line };
+    const gtGeo = new THREE.BufferGeometry();
+    gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    const gtLine = new THREE.Line(
+      gtGeo,
+      new THREE.LineBasicMaterial({ color: GT_COLOR, transparent: true, opacity: 0.35 })
+    );
+    scene.add(gtLine);
+
+    const liveGeo = new THREE.BufferGeometry();
+    liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    liveGeo.setDrawRange(0, 2);
+    const liveLine = new THREE.Line(
+      liveGeo,
+      new THREE.LineBasicMaterial({ color: payload.color })
+    );
+    scene.add(liveLine);
+
+    lineGroups[pid] = { points: payload.points, liveLine };
     const m = new THREE.Mesh(
       new THREE.SphereGeometry(1.2, 16, 16),
       new THREE.MeshStandardMaterial({ color: payload.color })
@@ -780,16 +851,7 @@ function initMap3D(traj3d, sequences) {
     markers[pid] = m;
   }
 
-  const t0 = sequences.t_start;
-  const t1 = sequences.t_end;
-  let playing = false;
-  let t = t0;
-  let last = null;
-
   function setTime(tNow) {
-    t = tNow;
-    const frac = (tNow - t0) / (t1 - t0);
-    document.getElementById("map3dSlider").value = String(Math.round(frac * 1000));
     for (const [pid, state] of Object.entries(lineGroups)) {
       const pose = interpolatePose(state.points, tNow);
       if (!pose) {
@@ -798,30 +860,16 @@ function initMap3D(traj3d, sequences) {
       }
       markers[pid].visible = true;
       markers[pid].position.set(pose[1] - cx, pose[3] * 1.5, pose[2] - cy);
-      // progressive line draw by shrinking draw range
       let count = 0;
       for (const p of state.points) {
         if (p[0] > tNow) break;
         count += 1;
       }
-      state.line.geometry.setDrawRange(0, Math.max(count, 2));
+      state.liveLine.geometry.setDrawRange(0, Math.max(count, 2));
     }
   }
 
-  document.getElementById("map3dSlider").addEventListener("input", (e) => {
-    const u = Number(e.target.value) / 1000;
-    setTime(t0 + u * (t1 - t0));
-  });
-  document.getElementById("map3dPlay").addEventListener("click", () => {
-    playing = !playing;
-    document.getElementById("map3dPlay").textContent = playing ? "Pause height" : "Play height";
-    last = null;
-  });
-
-  // Follow main playback when available
-  window.addEventListener("neuroam-time", (e) => {
-    if (!playing) setTime(e.detail);
-  });
+  window.addEventListener("neuroam-time", (e) => setTime(e.detail));
 
   function resize() {
     const w = Math.max(host.clientWidth, 1);
@@ -832,20 +880,9 @@ function initMap3D(traj3d, sequences) {
   }
   resize();
   window.addEventListener("resize", resize);
-  setTime(t0);
 
-  (function loop(ts) {
+  (function loop() {
     requestAnimationFrame(loop);
-    if (playing) {
-      if (last != null) {
-        t += ((ts - last) / 1000) * 30;
-        if (t > t1) t = t0;
-        setTime(t);
-      }
-      last = ts;
-    } else {
-      last = null;
-    }
     controls.update();
     renderer.render(scene, camera);
   })();
@@ -888,102 +925,56 @@ function initScenes(scenes, clips) {
   }, 9000);
   show(0);
 
-  // Still scenes: crossfade by cycling opacity highlight
-  const grid = document.getElementById("scenesGrid");
-  grid.innerHTML = scenes.scenes
-    .map(
-      (s) => `<figure class="scene"><img src="${s.file}" alt="${s.caption}" loading="lazy"><figcaption>${s.caption}</figcaption></figure>`
-    )
-    .join("");
-  const stills = [...grid.querySelectorAll(".scene")];
-  let sIdx = 0;
-  setInterval(() => {
-    stills.forEach((el, i) => {
-      el.style.outline = i === sIdx ? `2px solid ${COLORS[sIdx % 5]}` : "none";
-      el.style.opacity = i === sIdx ? "1" : "0.72";
+  const hardNav = document.getElementById("hardNav");
+  const hardImage = document.getElementById("hardImage");
+  const hardCaption = document.getElementById("hardCaption");
+  if (hardNav && hardImage && scenes.scenes?.length) {
+    let hardIdx = 0;
+    function showHard(i) {
+      hardIdx = (i + scenes.scenes.length) % scenes.scenes.length;
+      const s = scenes.scenes[hardIdx];
+      hardImage.src = s.file;
+      hardImage.alt = s.caption;
+      hardCaption.textContent = s.caption;
+      hardNav.querySelectorAll("button").forEach((btn, j) => {
+        btn.classList.toggle("active", j === hardIdx);
+      });
+    }
+    hardNav.innerHTML = scenes.scenes
+      .map(
+        (s, i) =>
+          `<button type="button" role="tab" data-i="${i}" aria-selected="${i === 0}">${s.caption}</button>`
+      )
+      .join("");
+    hardNav.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      showHard(Number(btn.dataset.i));
     });
-    sIdx = (sIdx + 1) % stills.length;
-  }, 2500);
-}
-
-function renderBenchmark(bench) {
-  document.getElementById("benchSummary").innerHTML = bench.summary
-    .map(
-      (r) => `<tr>
-        <td>${r.input}</td>
-        <td>${r.method}</td>
-        <td>${r.full}</td>
-        <td>${r.partial}</td>
-        <td>${r.fail}</td>
-        <td>${r.ate}</td>
-        <td>${r.rpe_t}</td>
-        <td>${r.rpe_r}</td>
-      </tr>`
-    )
-    .join("");
-  document.getElementById("benchNote").textContent = `${bench.note} ${bench.conditions}`;
-
-  const methods = bench.detail.methods || [];
-  document.getElementById("benchDetailHead").innerHTML =
-    `<tr><th>P</th><th>Sequence</th>${methods.map((m) => `<th>${m}</th>`).join("")}</tr>`;
-
-  const filters = document.getElementById("payloadFilters");
-  filters.innerHTML =
-    `<button type="button" data-p="all" class="active">All</button>` +
-    [0, 1, 2, 3, 4]
-      .map((p) => `<button type="button" data-p="${p}" style="color:${COLORS[p]}">P${p}</button>`)
-      .join("");
-
-  function paint(filter) {
-    const rows = bench.detail.rows.filter((r) => filter === "all" || r.payload === Number(filter));
-    document.getElementById("benchDetail").innerHTML = rows
-      .map((r) => {
-        const cells = methods
-          .map((m) => {
-            const v = r.values[m] || "—";
-            const muted = v === "fail" || v === "—" || Number(v) > 5;
-            return `<td class="${muted ? "muted-cell" : ""}">${v}</td>`;
-          })
-          .join("");
-        return `<tr><td class="pid" style="color:${COLORS[r.payload]}">P${r.payload}</td><td>${r.sequence}</td>${cells}</tr>`;
-      })
-      .join("");
+    showHard(0);
   }
-  paint("all");
-  filters.addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    filters.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    paint(btn.dataset.p);
-  });
 }
 
 async function main() {
   initTheme();
   initHeroParallax();
-  initHeroTraces();
-  const [meta, platforms, traj, sequences, comm, scenes, bench, clips, traj3d] = await Promise.all([
+  const [meta, platforms, traj, sequences, comm, scenes, clips, traj3d] = await Promise.all([
     loadJSON("static/data/meta.json"),
     loadJSON("static/data/platforms.json"),
     loadJSON("static/data/trajectories.json"),
     loadJSON("static/data/sequences.json"),
     loadJSON("static/data/comm.json"),
     loadJSON("static/data/scenes.json"),
-    loadJSON("static/data/benchmark.json"),
     loadJSON("static/data/clips.json"),
     loadJSON("static/data/trajectories_3d.json"),
   ]);
 
   renderHero(meta, platforms);
-  renderPlatforms(platforms);
-  initRobotGallery(platforms);
-  initPlayback(traj, sequences, comm, clips);
-  initMap3D(traj3d, sequences);
-  initGantt(sequences);
+  initPlayerSelect(platforms);
+  initPlayback(traj, sequences, comm);
+  initMap3D(traj3d);
   initCAD();
   initScenes(scenes, clips);
-  renderBenchmark(bench);
 }
 
 main().catch((err) => {
