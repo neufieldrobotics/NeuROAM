@@ -670,14 +670,77 @@ tr:last-child td {
 }
 
 .robot-card {
+  --accent: var(--p0);
+  --kb-delay: 0s;
   border: 1px solid var(--rule);
   background: var(--panel);
   overflow: hidden;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.robot-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
+  box-shadow: 0 10px 24px rgba(31, 31, 30, 0.08);
 }
 
 .robot-card .rv {
-  height: 160px;
+  position: relative;
+  height: 168px;
   background: var(--panel-2);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.robot-card .robot-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 55%;
+  transform-origin: 50% 55%;
+  animation: robotKenBurns 18s ease-in-out infinite alternate;
+  animation-delay: var(--kb-delay);
+  will-change: transform;
+}
+
+.robot-card:nth-child(2) .robot-photo {
+  object-position: center 60%;
+  animation-name: robotKenBurnsAlt;
+}
+
+.robot-card:nth-child(3) .robot-photo {
+  object-position: center 50%;
+}
+
+.robot-card:nth-child(4) .robot-photo {
+  object-position: center 40%;
+  animation-name: robotKenBurnsAlt;
+}
+
+.robot-card:nth-child(5) .robot-photo {
+  object-position: center 58%;
+}
+
+.robot-card .rv-glow {
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent) 28%, transparent),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.robot-card .rv::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-bottom: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .robot-card .meta {
@@ -693,6 +756,33 @@ tr:last-child td {
 .robot-card .meta span {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+@keyframes robotKenBurns {
+  0% {
+    transform: scale(1.04) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.14) translate(-2.5%, -1.5%);
+  }
+}
+
+@keyframes robotKenBurnsAlt {
+  0% {
+    transform: scale(1.06) translate(1.5%, 0);
+  }
+  100% {
+    transform: scale(1.15) translate(-1.5%, 2%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-card,
+  .robot-card .robot-photo {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 .player-shell {

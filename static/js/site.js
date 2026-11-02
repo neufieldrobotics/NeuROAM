@@ -29,12 +29,12 @@ const CAD_COLORS = {
   enclosure: "#c7c7be",
 };
 
-const ROBOT_MODELS = {
-  0: { file: "static/models/robots/spot.glb", label: "Spot" },
-  1: { file: "static/models/robots/scout.glb", label: "Scout" },
-  2: { file: "static/models/robots/hunter.glb", label: "Hunter" },
-  3: { file: "static/models/robots/go2w.glb", label: "Go2-W" },
-  4: { file: "static/models/robots/go2.glb", label: "Go2" },
+const ROBOT_PHOTOS = {
+  0: { file: "static/images/robots/spot.webp", alt: "Boston Dynamics Spot in the field" },
+  1: { file: "static/images/robots/scout.webp", alt: "AgileX Scout with NeuROAM payload" },
+  2: { file: "static/images/robots/hunter.webp", alt: "AgileX Hunter SE with NeuROAM payload" },
+  3: { file: "static/images/robots/go2w.webp", alt: "Unitree Go2-W with NeuROAM payload" },
+  4: { file: "static/images/robots/go2.webp", alt: "Unitree Go2 quadruped" },
 };
 
 async function loadJSON(path) {
@@ -113,85 +113,24 @@ function renderPlatforms(platforms) {
     .join(" · ");
 }
 
-function mountMiniViewer(host, url, colorHex) {
-  const scene = new THREE.Scene();
-  const dark = document.documentElement.getAttribute("data-theme") === "dark";
-  scene.background = new THREE.Color(dark ? 0x242421 : 0xf0efeb);
-  const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
-  camera.position.set(1.2, 0.7, 1.4);
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  host.appendChild(renderer.domElement);
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.display = "block";
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.enablePan = false;
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const dir = new THREE.DirectionalLight(0xffffff, 0.95);
-  dir.position.set(2, 3, 2);
-  scene.add(dir);
-
-  const resize = () => {
-    const w = Math.max(host.clientWidth, 1);
-    const h = Math.max(host.clientHeight, 1);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h, false);
-  };
-  resize();
-
-  new GLTFLoader().load(url, (gltf) => {
-    const root = gltf.scene;
-    scene.add(root);
-    root.traverse((o) => {
-      if (!o.isMesh) return;
-      o.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(colorHex),
-        metalness: 0.15,
-        roughness: 0.5,
-      });
-    });
-    const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3()).length();
-    const center = box.getCenter(new THREE.Vector3());
-    root.position.sub(center);
-    camera.position.set(size * 0.9, size * 0.55, size * 1.05);
-    controls.target.set(0, 0, 0);
-    controls.update();
-    resize();
-  });
-
-  window.addEventListener("neuroam-theme", () => {
-    const d = document.documentElement.getAttribute("data-theme") === "dark";
-    scene.background = new THREE.Color(d ? 0x242421 : 0xf0efeb);
-  });
-  window.addEventListener("resize", resize);
-  (function loop() {
-    requestAnimationFrame(loop);
-    controls.update();
-    renderer.render(scene, camera);
-  })();
-}
-
 function initRobotGallery(platforms) {
   const grid = document.getElementById("robotGrid");
   grid.innerHTML = platforms.platforms
-    .map(
-      (p) => `<article class="robot-card">
-        <div class="rv" id="robotView${p.id}"></div>
+    .map((p) => {
+      const photo = ROBOT_PHOTOS[p.id];
+      const delay = (p.id * 1.7).toFixed(1);
+      return `<article class="robot-card" style="--accent:${p.color}; --kb-delay:${delay}s">
+        <div class="rv">
+          <img class="robot-photo" src="${photo.file}" alt="${photo.alt}" loading="lazy" width="1000" height="750" />
+          <span class="rv-glow" aria-hidden="true"></span>
+        </div>
         <div class="meta">
           <strong style="color:${p.color}">P${p.id} ${p.robot}</strong>
           <span>${p.lidar} · ${p.distance_km} km</span>
         </div>
-      </article>`
-    )
+      </article>`;
+    })
     .join("");
-  for (const p of platforms.platforms) {
-    const model = ROBOT_MODELS[p.id];
-    mountMiniViewer(document.getElementById(`robotView${p.id}`), model.file, p.color);
-  }
 }
 
 function interpolatePose(points, t) {
