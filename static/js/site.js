@@ -89,6 +89,64 @@ function renderHero(meta, platforms) {
     `<div>${meta.authors.join(", ")}</div><div class="affil">${meta.affiliation}</div>`;
 }
 
+function initHeroParallax() {
+  const hero = document.getElementById("hero");
+  if (!hero) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
+  let targetX = 0;
+  let targetY = 0;
+  let currX = 0;
+  let currY = 0;
+  let raf = 0;
+
+  const apply = () => {
+    currX += (targetX - currX) * 0.08;
+    currY += (targetY - currY) * 0.08;
+    hero.style.setProperty("--hero-x", currX.toFixed(4));
+    hero.style.setProperty("--hero-y", currY.toFixed(4));
+    raf = 0;
+    if (Math.abs(targetX - currX) > 0.001 || Math.abs(targetY - currY) > 0.001) {
+      raf = requestAnimationFrame(apply);
+    }
+  };
+
+  const queue = () => {
+    if (!raf) raf = requestAnimationFrame(apply);
+  };
+
+  hero.addEventListener(
+    "pointermove",
+    (e) => {
+      const r = hero.getBoundingClientRect();
+      targetX = ((e.clientX - r.left) / r.width) * 2 - 1;
+      targetY = ((e.clientY - r.top) / r.height) * 2 - 1;
+      queue();
+    },
+    { passive: true }
+  );
+
+  hero.addEventListener(
+    "pointerleave",
+    () => {
+      targetX = 0;
+      targetY = 0;
+      queue();
+    },
+    { passive: true }
+  );
+
+  const onScroll = () => {
+    const r = hero.getBoundingClientRect();
+    if (r.bottom <= 0 || r.top >= window.innerHeight) return;
+    const progress = 1 - Math.min(1, Math.max(0, r.bottom / (r.height + window.innerHeight * 0.35)));
+    hero.style.setProperty("--hero-scroll", progress.toFixed(4));
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+}
+
 function renderPlatforms(platforms) {
   document.getElementById("swatches").innerHTML = platforms.platforms
     .map(
@@ -861,6 +919,7 @@ function renderBenchmark(bench) {
 
 async function main() {
   initTheme();
+  initHeroParallax();
   const [meta, platforms, traj, sequences, comm, scenes, bench, clips, traj3d] = await Promise.all([
     loadJSON("static/data/meta.json"),
     loadJSON("static/data/platforms.json"),

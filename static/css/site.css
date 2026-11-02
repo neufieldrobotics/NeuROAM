@@ -97,9 +97,9 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 40;
-  backdrop-filter: blur(10px);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  border-bottom: 1px solid var(--rule);
+  backdrop-filter: saturate(1.2) blur(16px);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
 }
 
 .site-header .wrap {
@@ -145,17 +145,6 @@ a:hover {
   cursor: pointer;
 }
 
-.hero {
-  padding: 3.25rem 0 2.25rem;
-}
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 2rem;
-  align-items: end;
-}
-
 .kicker {
   color: var(--muted);
   font-size: 0.85rem;
@@ -164,26 +153,228 @@ a:hover {
   margin: 0 0 0.75rem;
 }
 
+.hero {
+  --hero-x: 0;
+  --hero-y: 0;
+  --hero-scroll: 0;
+  position: relative;
+  isolation: isolate;
+  height: 100vh;
+  height: 100svh;
+  min-height: 40rem;
+  display: flex;
+  align-items: flex-end;
+  padding: 7.5rem 0 5rem;
+  overflow: hidden;
+  border-top: none;
+  background: var(--surface);
+}
+
+.hero-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-parallax {
+  position: absolute;
+  inset: -8%;
+  transform: translate3d(
+    calc(var(--hero-x) * 12px),
+    calc(var(--hero-y) * 10px + var(--hero-scroll) * 48px),
+    0
+  ) scale(calc(1 + var(--hero-scroll) * 0.04));
+  will-change: transform;
+}
+
+.hero-layer {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(
+    calc(var(--hero-x) * var(--depth-x, 28px)),
+    calc(var(--hero-y) * var(--depth-y, 20px)),
+    0
+  );
+  will-change: transform;
+}
+
+.hero-layer-map {
+  --depth-x: 18px;
+  --depth-y: 14px;
+  inset: -4%;
+}
+
+.hero-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  transform: scale(1.08);
+  animation: heroDrift 28s ease-in-out infinite alternate;
+  opacity: 0.92;
+}
+
+.hero-map-dark {
+  display: none;
+}
+
+html[data-theme="dark"] .hero-map-light {
+  display: none;
+}
+
+html[data-theme="dark"] .hero-map-dark {
+  display: block;
+  opacity: 0.88;
+}
+
+.hero-layer-orb {
+  --depth-x: 30px;
+  --depth-y: 22px;
+  background:
+    radial-gradient(42% 36% at 72% 38%, color-mix(in srgb, var(--p0) 18%, transparent), transparent 70%),
+    radial-gradient(34% 30% at 22% 68%, color-mix(in srgb, var(--p2) 14%, transparent), transparent 72%),
+    radial-gradient(28% 24% at 48% 22%, color-mix(in srgb, var(--p3) 12%, transparent), transparent 70%);
+  filter: blur(8px);
+  opacity: 0.85;
+  animation: heroOrb 16s ease-in-out infinite alternate;
+}
+
+.hero-layer-spot,
+.hero-layer-go2 {
+  inset: auto;
+  width: min(36vw, 460px);
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 28px 70px rgba(31, 31, 30, 0.14);
+  background: transparent;
+  -webkit-mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
+  mask-image: radial-gradient(120% 95% at 50% 40%, #000 40%, transparent 78%);
+}
+
+.hero-layer-spot {
+  --depth-x: 48px;
+  --depth-y: 34px;
+  right: max(4vw, 1.5rem);
+  bottom: 18%;
+  animation: heroFloatA 9s ease-in-out infinite alternate;
+}
+
+.hero-layer-go2 {
+  --depth-x: 64px;
+  --depth-y: 44px;
+  right: max(26vw, 12rem);
+  bottom: 38%;
+  width: min(26vw, 320px);
+  opacity: 0.92;
+  animation: heroFloatB 11s ease-in-out infinite alternate;
+}
+
+.hero-layer-spot img,
+.hero-layer-go2 img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.06);
+}
+
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--surface) 88%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 58%, transparent) 28%,
+      color-mix(in srgb, var(--surface) 12%, transparent) 58%,
+      color-mix(in srgb, var(--surface) 36%, transparent) 100%
+    ),
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--surface) 82%, transparent) 0%,
+      transparent 38%
+    );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 40rem;
+  padding-bottom: 0.5rem;
+}
+
 .hero h1 {
   margin: 0;
-  font-size: clamp(2.4rem, 5vw, 3.6rem);
-  letter-spacing: -0.04em;
-  line-height: 1.05;
+  font-size: clamp(3.4rem, 9vw, 6.4rem);
+  letter-spacing: -0.055em;
+  line-height: 0.94;
   font-weight: 600;
 }
 
 .hero .lede {
-  margin: 1rem 0 0;
+  margin: 1.15rem 0 0;
   color: var(--ink2);
-  font-size: 1.05rem;
-  max-width: 38rem;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  max-width: 34rem;
+  line-height: 1.45;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.65rem 1.05rem;
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  transition: transform 0.25s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn.secondary {
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.btn:hover {
+  color: var(--surface);
+  background: var(--p0);
+  border-color: var(--p0);
+  transform: translateY(-1px);
+}
+
+.btn.secondary:hover {
+  color: var(--p0);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.hero-meta {
+  padding: 1.75rem 0 2rem;
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.75rem;
-  margin: 1.75rem 0 1.25rem;
 }
 
 .stat {
@@ -203,56 +394,8 @@ a:hover {
   font-size: 0.82rem;
 }
 
-.cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--surface);
-  text-decoration: none;
-  font-size: 0.92rem;
-  font-weight: 500;
-  padding: 0.55rem 0.9rem;
-  border-radius: var(--radius);
-}
-
-.btn.secondary {
-  background: transparent;
-  color: var(--ink);
-}
-
-.btn:hover {
-  color: var(--surface);
-  background: var(--p0);
-  border-color: var(--p0);
-}
-
-.btn.secondary:hover {
-  color: var(--p0);
-  background: transparent;
-}
-
-.hero-visual {
-  border: 1px solid var(--rule);
-  background: var(--panel);
-  overflow: hidden;
-}
-
-.hero-visual img {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-}
-
 .authors {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   color: var(--ink2);
   font-size: 0.86rem;
   max-width: 48rem;
@@ -261,6 +404,60 @@ a:hover {
 .authors .affil {
   color: var(--muted);
   margin-top: 0.25rem;
+}
+
+@keyframes heroDrift {
+  0% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate3d(-1.6%, -1.2%, 0);
+  }
+}
+
+@keyframes heroOrb {
+  0% {
+    opacity: 0.7;
+    transform: translate3d(-1%, 1%, 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(1.5%, -1.5%, 0) scale(1.05);
+  }
+}
+
+@keyframes heroFloatA {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-1.5%, -2.5%, 0);
+  }
+}
+
+@keyframes heroFloatB {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(2%, -1.8%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-map,
+  .hero-layer-orb,
+  .hero-layer-spot,
+  .hero-layer-go2,
+  .btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hero-parallax,
+  .hero-layer {
+    transform: none !important;
+  }
 }
 
 section {
@@ -619,7 +816,39 @@ tr:last-child td {
 }
 
 @media (max-width: 960px) {
-  .hero-grid,
+  .hero {
+    height: 100svh;
+    align-items: flex-end;
+    padding: 6.5rem 0 3.5rem;
+  }
+
+  .hero-layer-spot,
+  .hero-layer-go2 {
+    opacity: 0.9;
+  }
+
+  .hero-layer-spot {
+    width: min(46vw, 240px);
+    right: 1rem;
+    bottom: 12%;
+  }
+
+  .hero-layer-go2 {
+    width: min(36vw, 180px);
+    right: 42vw;
+    bottom: 34%;
+  }
+
+  .hero-scrim {
+    background:
+      linear-gradient(
+        to top,
+        color-mix(in srgb, var(--surface) 94%, transparent) 0%,
+        color-mix(in srgb, var(--surface) 72%, transparent) 38%,
+        color-mix(in srgb, var(--surface) 35%, transparent) 100%
+      );
+  }
+
   .playback-layout,
   .sync-grid,
   .payload-grid,

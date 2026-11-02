@@ -7,7 +7,7 @@
   <meta name="description" content="NeuROAM: a dataset for large-scale, heterogeneous, multi-robot SLAM in dynamic environments. Five robots, GNSS-synchronized sensors, campus-scale ground truth, and measured mesh-radio links.">
   <meta property="og:title" content="NeuROAM">
   <meta property="og:description" content="A dataset for large-scale, heterogeneous, multi-robot SLAM in dynamic environments.">
-  <meta property="og:image" content="static/images/teaser.webp">
+  <meta property="og:image" content="static/images/hero_map.webp">
   <meta property="og:url" content="https://neufieldrobotics.github.io/NeuROAM/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="static/images/favicon.ico">
@@ -33,23 +33,38 @@
   </header>
 
   <main id="top">
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div>
-          <p class="kicker">Project page</p>
-          <h1>NeuROAM</h1>
-          <p class="lede">Five heterogeneous robots, one GNSS-disciplined clock, campus-scale ground truth, and the radio links they actually had.</p>
-          <div class="stats" id="heroStats"></div>
-          <div class="cta-row">
-            <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Dataset</a>
-            <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Code</a>
-            <a class="btn secondary" href="#playback">Live playback</a>
+    <section class="hero" id="hero">
+      <div class="hero-stage" aria-hidden="true">
+        <div class="hero-parallax" id="heroParallax">
+          <div class="hero-layer hero-layer-map" data-depth="0.12">
+            <img class="hero-map hero-map-light" src="static/images/hero_map.webp" alt="" width="2400" height="1350" decoding="async">
+            <img class="hero-map hero-map-dark" src="static/images/hero_map_dark.webp" alt="" width="2400" height="1350" decoding="async">
           </div>
-          <div class="authors" id="authors"></div>
+          <div class="hero-layer hero-layer-orb" data-depth="0.22"></div>
+          <div class="hero-layer hero-layer-spot" data-depth="0.42">
+            <img src="static/images/robots/spot.webp" alt="" width="1000" height="750" decoding="async">
+          </div>
+          <div class="hero-layer hero-layer-go2" data-depth="0.58">
+            <img src="static/images/robots/go2.webp" alt="" width="1000" height="750" decoding="async">
+          </div>
         </div>
-        <figure class="hero-visual">
-          <img src="static/images/teaser.webp" alt="Three NeuROAM robots with campus trajectories" width="1600" height="900">
-        </figure>
+        <div class="hero-scrim"></div>
+      </div>
+      <div class="wrap hero-content">
+        <h1>NeuROAM</h1>
+        <p class="lede">Five heterogeneous robots, one GNSS-disciplined clock, campus-scale ground truth, and the radio links they actually had.</p>
+        <div class="cta-row">
+          <a class="btn" href="https://huggingface.co/datasets/NEUFR/NeuROAM" target="_blank" rel="noopener">Dataset</a>
+          <a class="btn secondary" href="https://github.com/neufieldrobotics/NeuROAM" target="_blank" rel="noopener">Code</a>
+          <a class="btn secondary" href="#playback">Live playback</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero-meta">
+      <div class="wrap">
+        <div class="stats" id="heroStats"></div>
+        <div class="authors" id="authors"></div>
       </div>
     </section>
 
