@@ -95,6 +95,91 @@ function initTheme() {
   });
 }
 
+function mountFleetViewer(host, url) {
+  const scene = new THREE.Scene();
+  const syncBg = () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    scene.background = new THREE.Color(dark ? 0x1c1c1a : 0xf7f6f3);
+  };
+  syncBg();
+  window.addEventListener("neuroam-theme", syncBg);
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 20);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  host.appendChild(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.domElement.style.display = "block";
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1.1;
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+  const key = new THREE.DirectionalLight(0xffffff, 1.05);
+  key.position.set(2, 3, 2);
+  scene.add(key);
+  const root = new THREE.Group();
+  scene.add(root);
+  let spinning = true;
+  controls.addEventListener("start", () => {
+    spinning = false;
+  });
+  controls.addEventListener("end", () => {
+    spinning = true;
+  });
+
+  new GLTFLoader().load(url, (gltf) => {
+    root.add(gltf.scene);
+    const box = new THREE.Box3().setFromObject(gltf.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    gltf.scene.position.sub(center);
+    const size = Math.max(box.getSize(new THREE.Vector3()).length(), 0.2);
+    camera.near = size / 200;
+    camera.far = size * 20;
+    camera.position.set(size * 0.72, size * 0.38, size * 0.95);
+    controls.target.set(0, size * 0.02, 0);
+    controls.update();
+    camera.updateProjectionMatrix();
+  });
+
+  const resize = () => {
+    const w = Math.max(host.clientWidth, 1);
+    const h = Math.max(host.clientHeight, 1);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  };
+  resize();
+  window.addEventListener("resize", resize);
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls.autoRotate = spinning;
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+}
+
+function initFleet() {
+  const grid = document.getElementById("fleetGrid");
+  if (!grid) return;
+  const fleet = [
+    { id: 0, name: "Spot", file: "static/models/robots/spot.glb" },
+    { id: 1, name: "Scout", file: "static/models/robots/scout.glb" },
+    { id: 3, name: "Go2-W", file: "static/models/robots/go2w.glb" },
+    { id: 4, name: "Go2", file: "static/models/robots/go2.glb" },
+  ];
+  grid.innerHTML = fleet
+    .map(
+      (r) => `<figure class="fleet-card" style="--accent:${COLORS[r.id]}">
+        <div class="fleet-view" id="fleetView${r.id}"></div>
+        <figcaption><b style="color:${COLORS[r.id]}">P${r.id}</b> ${r.name}</figcaption>
+      </figure>`
+    )
+    .join("");
+  for (const r of fleet) mountFleetViewer(document.getElementById(`fleetView${r.id}`), r.file);
+}
+
 function renderHero(meta, platforms) {
   const totals = platforms.totals;
   const stats = [
@@ -1060,6 +1145,7 @@ async function main() {
   ]);
 
   const steps = [
+    ["fleet", () => initFleet()],
     ["hero", () => renderHero(meta, platforms)],
     ["platforms", () => renderPlatforms(platforms)],
     ["gallery", () => initRobotGallery(platforms)],
