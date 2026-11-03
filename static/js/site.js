@@ -160,24 +160,29 @@ function mountFleetViewer(host, url) {
   })();
 }
 
-function initFleet() {
-  const grid = document.getElementById("fleetGrid");
+function initFleet(platforms) {
+  const grid = document.getElementById("robotGrid");
   if (!grid) return;
-  const fleet = [
-    { id: 0, name: "Spot", file: "static/models/robots/spot.glb" },
-    { id: 1, name: "Scout", file: "static/models/robots/scout.glb" },
-    { id: 3, name: "Go2-W", file: "static/models/robots/go2w.glb" },
-    { id: 4, name: "Go2", file: "static/models/robots/go2.glb" },
-  ];
+  const fleet = platforms.platforms.map((p) => ({
+    id: p.id,
+    name: p.robot,
+    file: ROBOT_MODELS[p.id],
+    detail: `${p.sequences} sequences · ${p.distance_km} km`,
+  }));
   grid.innerHTML = fleet
     .map(
       (r) => `<figure class="fleet-card" style="--accent:${COLORS[r.id]}">
         <div class="fleet-view" id="fleetView${r.id}"></div>
-        <figcaption><b style="color:${COLORS[r.id]}">P${r.id}</b> ${r.name}</figcaption>
+        <figcaption>
+          <b style="color:${COLORS[r.id]}">P${r.id} ${r.name}</b>
+          <span>${r.detail}</span>
+        </figcaption>
       </figure>`
     )
     .join("");
-  for (const r of fleet) mountFleetViewer(document.getElementById(`fleetView${r.id}`), r.file);
+  for (const r of fleet) {
+    if (r.file) mountFleetViewer(document.getElementById(`fleetView${r.id}`), r.file);
+  }
 }
 
 function renderHero(meta, platforms) {
@@ -1145,10 +1150,9 @@ async function main() {
   ]);
 
   const steps = [
-    ["fleet", () => initFleet()],
     ["hero", () => renderHero(meta, platforms)],
     ["platforms", () => renderPlatforms(platforms)],
-    ["gallery", () => initRobotGallery(platforms)],
+    ["fleet", () => initFleet(platforms)],
     ["playback", () => initPlayback(traj, sequences, comm)],
     ["map3d", () => initMap3D(traj3d)],
     ["cloud", () => initCloud()],

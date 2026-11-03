@@ -1413,55 +1413,36 @@ tr:last-child td {
   font-size: 0.85rem;
 }
 
-.hero-fleet {
-  position: absolute;
-  z-index: 2;
-  top: 5.6rem;
-  right: max(1.25rem, 4vw);
-  width: min(46vw, 560px);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
-  pointer-events: auto;
+.fleet-grid {
+  align-items: stretch;
 }
 
 .fleet-card {
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--rule));
-  background: color-mix(in srgb, var(--panel) 78%, transparent);
-  backdrop-filter: blur(8px);
+  border: 1px solid var(--rule);
+  background: var(--panel);
   overflow: hidden;
 }
 
 .fleet-view {
-  height: 148px;
+  height: 210px;
   background: var(--panel-2);
 }
 
 .fleet-card figcaption {
-  padding: 0.35rem 0.55rem 0.45rem;
+  padding: 0.55rem 0.65rem 0.7rem;
   border-top: 1px solid var(--rule);
-  font-size: 0.78rem;
-  color: var(--ink2);
+  display: grid;
+  gap: 0.15rem;
 }
 
 .fleet-card figcaption b {
-  margin-right: 0.3rem;
+  font-size: 0.9rem;
 }
 
-@media (max-width: 860px) {
-  .hero-academic {
-    height: auto;
-    padding-bottom: 1.5rem;
-  }
-
-  .hero-fleet {
-    position: relative;
-    top: auto;
-    right: auto;
-    width: 100%;
-    margin-top: 1.5rem;
-  }
+.fleet-card figcaption span {
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 .platforms-panel {
