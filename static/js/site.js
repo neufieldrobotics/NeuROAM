@@ -41,6 +41,18 @@ const CAD_LABELS = {
   enclosure: "Enclosure",
 };
 
+const CAD_EXPLODE = {
+  lidar: { to: [0, 0.1, -0.36], at: [0, 0.45] },
+  enclosure: { to: [0, -0.08, 0], at: [0, 0.45] },
+  cameras: { to: [-0.2, 0, 0], at: [0.1, 0.55] },
+  display: { to: [0.2, 0, 0], at: [0.1, 0.55] },
+  power: { to: [0, 0.1, 0.24], at: [0.2, 0.65] },
+  compute: { to: [0, 0.42, 0], at: [0.3, 0.8] },
+  radio: { to: [0, 0.3, 0], at: [0.4, 0.88] },
+  gnss: { to: [0, 0.2, 0], at: [0.5, 0.94] },
+  imu: { to: [0, 0.1, 0], at: [0.55, 1] },
+};
+
 const ROBOT_PHOTOS = {
   0: { file: "static/images/robots/spot.webp?v=2", alt: "NeuROAM Spot with payload" },
   1: { file: "static/images/robots/scout.webp?v=2", alt: "AgileX Scout Mini" },
@@ -747,13 +759,109 @@ function initCAD() {
   clipHelper.visible = false;
   scene.add(clipHelper);
 
-  const groupRoots = {};
-  const centroids = {};
+  const parts = []; // one entry per CAD group mesh: { obj, home, box, to, at, offset }
   let modelSize = 1;
-  let clipMin = -0.3;
-  let clipMax = 0.3;
+  let baseRadius = 1;
+  const explodeInput = document.getElementById("explode");
+  const clipInput = document.getElementById("clip");
+  let explodeTarget = Number(explodeInput.value) / 100;
+  let explodeNow = 0;
+  let clipU = Number(clipInput.value) / 100;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const root = new THREE.Group();
   scene.add(root);
+
+  const layout = { box: new THREE.Box3(), center: new THREE.Vector3(), radius: 1 };
+  const _box = new THREE.Box3();
+  const _v = new THREE.Vector3();
+  const _c = new THREE.Vector3();
+  const _prevCenter = new THREE.Vector3();
+  const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+
+  const leaderMat = new THREE.LineDashedMaterial({
+    color: 0x8c8c85,
+    dashSize: 0.012,
+    gapSize: 0.008,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    clippingPlanes: [clipPlane],
+  });
+  const leaders = new THREE.LineSegments(new THREE.BufferGeometry(), leaderMat);
+  leaders.visible = false;
+  scene.add(leaders);
+  const syncLeaders = () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    leaderMat.color.set(dark ? 0xa3a39b : 0x6f6f69);
+  };
+  syncLeaders();
+  window.addEventListener("neuroam-theme", syncLeaders);
+
+  function applyExplode(t) {
+    layout.box.makeEmpty();
+    for (const p of parts) {
+      const [a, b] = p.at;
+      const k = easeInOut(THREE.MathUtils.clamp((t - a) / (b - a), 0, 1));
+      p.offset.copy(p.to).multiplyScalar(k * modelSize);
+      p.obj.position.copy(p.home).add(p.offset);
+      layout.box.union(_box.copy(p.box).translate(p.offset));
+    }
+    layout.box.getCenter(layout.center);
+    let r = 0;
+    for (const p of parts) {
+      _box.copy(p.box).translate(p.offset);
+      for (let i = 0; i < 8; i++) {
+        _v.set(
+          i & 1 ? _box.max.x : _box.min.x,
+          i & 2 ? _box.max.y : _box.min.y,
+          i & 4 ? _box.max.z : _box.min.z
+        );
+        r = Math.max(r, _v.distanceTo(layout.center));
+      }
+    }
+    layout.radius = Math.max(r, 1e-3);
+  }
+
+
+  const frameScale = (r = layout.radius) => 1 + (r / baseRadius - 1) * 0.8;
+
+  function reframe(prevCenter, prevRadius) {
+    _v.subVectors(camera.position, controls.target).multiplyScalar(frameScale() / frameScale(prevRadius));
+    controls.target.add(_c.subVectors(layout.center, prevCenter));
+    camera.position.copy(controls.target).add(_v);
+  }
+
+  function updateClip() {
+    if (!parts.length) return;
+    // 0 = no clip (plane beyond +X), 1 = cut through past center toward -X
+    const b = layout.box;
+    const sx = b.max.x - b.min.x;
+    const hi = b.max.x + sx * 0.05 + 0.02;
+    const lo = b.min.x - sx * 0.05 - 0.02;
+    clipPlane.constant = hi + clipU * (lo - hi);
+    clipHelper.position.set(clipPlane.constant, layout.center.y, layout.center.z);
+    clipHelper.scale.set((b.max.z - b.min.z) * 1.4, (b.max.y - b.min.y) * 1.4, 1);
+    clipHelper.visible = clipU > 0.01;
+  }
+
+  function updateLeaders(t) {
+    const pos = leaders.geometry.attributes.position;
+    if (!pos) return;
+    let i = 0;
+    for (const p of parts) {
+      if (!p.leader) continue;
+      p.box.getCenter(_v);
+      pos.setXYZ(i++, _v.x, _v.y, _v.z);
+      _v.add(p.offset);
+      pos.setXYZ(i++, _v.x, _v.y, _v.z);
+    }
+    pos.needsUpdate = true;
+    leaders.geometry.computeBoundingSphere();
+    leaders.computeLineDistances();
+    leaderMat.opacity = 0.75 * THREE.MathUtils.smoothstep(t, 0.03, 0.3);
+    leaders.visible = leaderMat.opacity > 0.01;
+  }
 
   function resize() {
     const w = Math.max(host.clientWidth, 1);
@@ -776,12 +884,10 @@ function initCAD() {
       const size = Math.max(sizeVec.length(), 0.2);
       const center = box.getCenter(new THREE.Vector3());
       gltf.scene.position.sub(center);
+      gltf.scene.updateMatrixWorld(true);
       modelSize = size;
-      clipMax = sizeVec.x * 0.55 + 0.02;
-      clipMin = -sizeVec.x * 0.55 - 0.02;
-      clipPlane.set(new THREE.Vector3(-1, 0, 0), clipMax);
-      clipHelper.scale.set(sizeVec.z * 1.4, sizeVec.y * 1.4, 1);
       clipHelper.rotation.y = Math.PI / 2;
+      parts.length = 0;
 
       gltf.scene.traverse((obj) => {
         if (!obj.isMesh) return;
@@ -796,13 +902,28 @@ function initCAD() {
           clippingPlanes: [clipPlane],
           clipShadows: true,
         });
-        const c = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
-        centroids[gkey] = c;
-        if (!groupRoots[gkey]) groupRoots[gkey] = [];
-        groupRoots[gkey].push(obj);
-        obj.userData.home = obj.position.clone();
-        obj.userData.key = gkey;
+        const plan = CAD_EXPLODE[gkey] || { to: [0, 0, 0], at: [0, 1] };
+        parts.push({
+          obj,
+          home: obj.position.clone(),
+          box: new THREE.Box3().setFromObject(obj),
+          to: new THREE.Vector3(...plan.to),
+          at: plan.at,
+          offset: new THREE.Vector3(),
+          leader: gkey !== "enclosure" && plan.to.some((v) => v !== 0),
+        });
       });
+
+      const nLeaders = parts.filter((p) => p.leader).length;
+      leaders.geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(nLeaders * 2 * 3), 3)
+      );
+      applyExplode(0);
+      baseRadius = layout.radius;
+      explodeNow = 0;
+      updateClip();
+      updateLeaders(0);
 
       const dist = size * 1.35;
       camera.near = size / 200;
@@ -822,44 +943,46 @@ function initCAD() {
     }
   );
 
-  document.getElementById("clip").addEventListener("input", (e) => {
-    const u = Number(e.target.value) / 100;
-    // 0 = no clip (plane beyond +X), 1 = cut through past center toward -X
-    clipPlane.constant = clipMax + u * (clipMin - clipMax);
-    clipHelper.position.set(clipPlane.constant, 0, 0);
-    clipHelper.visible = u > 0.01;
+  clipInput.addEventListener("input", (e) => {
+    clipU = Number(e.target.value) / 100;
+    updateClip();
   });
 
-  document.getElementById("explode").addEventListener("input", (e) => {
-    const amount = Number(e.target.value) / 100;
-    const explodeDist = modelSize * 0.5;
-    for (const obj of Object.values(groupRoots).flat()) {
-      const c = centroids[obj.userData.key] || new THREE.Vector3(0, 1, 0);
-      const dir = c.clone();
-      if (dir.lengthSq() < 1e-8) dir.set(0, 1, 0);
-      else dir.normalize();
-      obj.position.copy(obj.userData.home).addScaledVector(dir, amount * explodeDist);
-    }
+  explodeInput.addEventListener("input", (e) => {
+    explodeTarget = Number(e.target.value) / 100;
   });
 
   function setView(name) {
-    const dist = Math.max(modelSize * 1.35, 0.5);
+    const dist = Math.max(modelSize * 1.35, 0.5) * frameScale();
     const views = {
       iso: new THREE.Vector3(0.85, 0.55, 0.95),
       front: new THREE.Vector3(0, 0.25, 1),
       side: new THREE.Vector3(1, 0.2, 0),
       top: new THREE.Vector3(0.05, 1, 0.05),
     };
-    camera.position.copy(views[name].normalize().multiplyScalar(dist));
-    controls.target.set(0, 0, 0);
+    controls.target.copy(layout.center);
+    camera.position.copy(views[name].normalize().multiplyScalar(dist)).add(layout.center);
     controls.update();
   }
   document.querySelectorAll(".cad-ui [data-view]").forEach((btn) => {
     btn.addEventListener("click", () => setView(btn.dataset.view));
   });
 
-  (function animate() {
+  let last = performance.now();
+  (function animate(now = performance.now()) {
     requestAnimationFrame(animate);
+    const dt = Math.min(Math.max((now - last) / 1000, 0), 0.1);
+    last = now;
+    if (parts.length && explodeNow !== explodeTarget) {
+      const prevCenter = _prevCenter.copy(layout.center);
+      const prevRadius = layout.radius;
+      explodeNow += (explodeTarget - explodeNow) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 7));
+      if (Math.abs(explodeTarget - explodeNow) < 5e-4) explodeNow = explodeTarget;
+      applyExplode(explodeNow);
+      reframe(prevCenter, prevRadius);
+      updateClip();
+      updateLeaders(explodeNow);
+    }
     controls.update();
     renderer.render(scene, camera);
   })();
