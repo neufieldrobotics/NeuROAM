@@ -130,10 +130,15 @@ function mountFleetViewer(host, url) {
   });
 
   new GLTFLoader().load(url, (gltf) => {
-    root.add(gltf.scene);
-    const box = new THREE.Box3().setFromObject(gltf.scene);
+    // CAD is Z-up. Stand it up in Three's Y-up frame.
+    const upright = new THREE.Group();
+    upright.rotation.x = -Math.PI / 2;
+    upright.add(gltf.scene);
+    root.add(upright);
+    upright.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(upright);
     const center = box.getCenter(new THREE.Vector3());
-    gltf.scene.position.sub(center);
+    upright.position.sub(center);
     const size = Math.max(box.getSize(new THREE.Vector3()).length(), 0.2);
     camera.near = size / 200;
     camera.far = size * 20;
@@ -166,7 +171,7 @@ function initFleet(platforms) {
   const fleet = platforms.platforms.map((p) => ({
     id: p.id,
     name: p.robot,
-    file: ROBOT_MODELS[p.id],
+    file: `${ROBOT_MODELS[p.id]}?v=3`,
     detail: `${p.sequences} sequences · ${p.distance_km} km`,
   }));
   grid.innerHTML = fleet
