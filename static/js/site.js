@@ -171,7 +171,7 @@ function initFleet(platforms) {
   const fleet = platforms.platforms.map((p) => ({
     id: p.id,
     name: p.robot,
-    file: `${ROBOT_MODELS[p.id]}?v=5`,
+    file: `${ROBOT_MODELS[p.id]}?v=6`,
     detail: `${p.sequences} sequences · ${p.distance_km} km`,
   }));
   grid.innerHTML = fleet
