@@ -42,11 +42,11 @@ const CAD_LABELS = {
 };
 
 const ROBOT_PHOTOS = {
-  0: { file: "static/images/robots/spot.webp", alt: "Boston Dynamics Spot" },
-  1: { file: "static/images/robots/scout.webp", alt: "AgileX Scout Mini" },
-  2: { file: "static/images/robots/hunter.webp", alt: "AgileX Hunter SE" },
-  3: { file: "static/images/robots/go2w.webp", alt: "Unitree Go2-W" },
-  4: { file: "static/images/robots/go2.webp", alt: "Unitree Go2" },
+  0: { file: "static/images/robots/spot.webp?v=2", alt: "NeuROAM Spot with payload" },
+  1: { file: "static/images/robots/scout.webp?v=2", alt: "AgileX Scout Mini" },
+  2: { file: "static/images/robots/hunter.webp?v=2", alt: "NeuROAM Hunter SE with payload" },
+  3: { file: "static/images/robots/go2w.webp?v=2", alt: "NeuROAM Go2-W with payload" },
+  4: { file: "static/images/robots/go2.webp?v=2", alt: "Unitree Go2" },
 };
 
 const ROBOT_MODELS = {
