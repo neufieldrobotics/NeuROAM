@@ -1578,3 +1578,32 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+
+.cloud-shell {
+  position: relative;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+#cloudView {
+  height: 640px;
+  width: 100%;
+}
+
+.cloud-status {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.85rem;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--rule);
+  font-size: 0.82rem;
+  color: var(--ink2);
+}
+
+@media (max-width: 720px) {
+  #cloudView {
+    height: 420px;
+  }
+}

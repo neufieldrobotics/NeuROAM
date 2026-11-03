@@ -770,6 +770,106 @@ function initCAD() {
   })();
 }
 
+async function initCloud() {
+  const host = document.getElementById("cloudView");
+  const status = document.getElementById("cloudStatus");
+  if (!host) return;
+
+  const scene = new THREE.Scene();
+  const syncBg = () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    scene.background = new THREE.Color(dark ? 0x141413 : 0xf4f3ef);
+    scene.fog = new THREE.Fog(scene.background, 80, 420);
+  };
+  syncBg();
+  window.addEventListener("neuroam-theme", syncBg);
+
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.2, 2000);
+  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  host.appendChild(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.domElement.style.display = "block";
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.rotateSpeed = 0.55;
+  controls.zoomSpeed = 0.8;
+
+  function resize() {
+    const w = Math.max(host.clientWidth, 1);
+    const h = Math.max(host.clientHeight, 1);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+
+  try {
+    const meta = await loadJSON("static/cloud/campus_meta.json");
+    if (status) status.textContent = `Loading ${meta.count.toLocaleString()} points…`;
+    const [xyzBuf, rgbBuf] = await Promise.all([
+      fetch("static/cloud/campus_xyz.bin").then((r) => {
+        if (!r.ok) throw new Error("xyz");
+        return r.arrayBuffer();
+      }),
+      fetch("static/cloud/campus_rgb.bin").then((r) => {
+        if (!r.ok) throw new Error("rgb");
+        return r.arrayBuffer();
+      }),
+    ]);
+    const xyz = new Float32Array(xyzBuf);
+    const rgb = new Uint8Array(rgbBuf);
+    // Source map is Z-up. Three.js is Y-up.
+    for (let i = 0; i < xyz.length; i += 3) {
+      const y = xyz[i + 1];
+      xyz[i + 1] = xyz[i + 2];
+      xyz[i + 2] = -y;
+    }
+    const colors = new Float32Array(rgb.length);
+    for (let i = 0; i < rgb.length; i++) colors[i] = rgb[i] / 255;
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(xyz, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geo.computeBoundingBox();
+    geo.computeBoundingSphere();
+    const mat = new THREE.PointsMaterial({
+      size: 2.1,
+      vertexColors: true,
+      sizeAttenuation: false,
+    });
+    scene.add(new THREE.Points(geo, mat));
+
+    const box = geo.boundingBox;
+    const center = box.getCenter(new THREE.Vector3());
+    const span = box.getSize(new THREE.Vector3()).length();
+    camera.near = Math.max(0.2, span / 5000);
+    camera.far = span * 4;
+    camera.position.set(center.x + span * 0.22, center.y + span * 0.28, center.z + span * 0.38);
+    controls.target.copy(center);
+    controls.update();
+    camera.updateProjectionMatrix();
+    scene.fog = new THREE.Fog(scene.background, span * 0.45, span * 1.25);
+
+    const millions = (meta.source_points / 1e6).toFixed(0);
+    const note = document.getElementById("cloudNote");
+    if (note) {
+      note.textContent = `${meta.count.toLocaleString()} points on screen, voxel ${meta.voxel_m} m, from ${millions} million in the reference map. Height is colour.`;
+    }
+    if (status) status.hidden = true;
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = "Point cloud failed to load.";
+  }
+}
+
 function initMap3D(traj3d) {
   const host = document.getElementById("map3d");
   if (!host) return;
@@ -965,6 +1065,7 @@ async function main() {
     ["gallery", () => initRobotGallery(platforms)],
     ["playback", () => initPlayback(traj, sequences, comm)],
     ["map3d", () => initMap3D(traj3d)],
+    ["cloud", () => initCloud()],
     ["cad", () => initCAD()],
     ["scenes", () => initScenes(scenes, clips)],
   ];

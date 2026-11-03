@@ -12,7 +12,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="static/images/favicon.ico">
   <link rel="stylesheet" href="static/vendor/maplibre-gl.css">
-  <link rel="stylesheet" href="static/css/site.css?v=20261102e">
+  <link rel="stylesheet" href="static/css/site.css?v=20261102f">
 </head>
 <body>
   <header class="site-header">
@@ -21,6 +21,7 @@
       <nav class="nav" aria-label="Sections">
         <a href="#platforms">Platforms</a>
         <a href="#playback">Playback</a>
+        <a href="#cloud">Map</a>
         <a href="#payload">Payload</a>
         <a href="#scenes">Scenes</a>
         <a href="#data">Data</a>
@@ -132,6 +133,19 @@
       </div>
     </section>
 
+    <section id="cloud">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Campus point cloud</h2>
+          <p id="cloudNote">Reference map, height-coloured. Orbit to look through buildings and courtyards.</p>
+        </div>
+        <div class="cloud-shell">
+          <div id="cloudView" aria-label="Interactive campus point cloud"></div>
+          <div class="cloud-status" id="cloudStatus">Loading map…</div>
+        </div>
+      </div>
+    </section>
+
     <section id="payload">
       <div class="wrap">
         <div class="section-head">
@@ -231,6 +245,6 @@
     }
   }
   </script>
-  <script type="module" src="static/js/site.js?v=20261102e"></script>
+  <script type="module" src="static/js/site.js?v=20261102f"></script>
 </body>
 </html>
