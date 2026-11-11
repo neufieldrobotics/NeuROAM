@@ -1185,6 +1185,28 @@ async function initCloud() {
   }
 }
 
+function ribbonPositions(coords, halfWidth) {
+  const out = [];
+  for (let i = 0; i < coords.length - 1; i++) {
+    const a = coords[i];
+    const b = coords[i + 1];
+    let px = -(b[2] - a[2]);
+    let pz = b[0] - a[0];
+    const len = Math.hypot(px, pz) || 1;
+    px = (px / len) * halfWidth;
+    pz = (pz / len) * halfWidth;
+    out.push(
+      a[0] + px, a[1], a[2] + pz,
+      a[0] - px, a[1], a[2] - pz,
+      b[0] + px, b[1], b[2] + pz,
+      a[0] - px, a[1], a[2] - pz,
+      b[0] - px, b[1], b[2] - pz,
+      b[0] + px, b[1], b[2] + pz
+    );
+  }
+  return out;
+}
+
 function initMap3D(traj3d) {
   const host = document.getElementById("map3d");
   if (!host) return;
@@ -1265,22 +1287,32 @@ function initMap3D(traj3d) {
     if (run.length) runs.push(run);
 
     const liveLines = runs.map((segment) => {
-      const positions = [];
-      for (const p of segment) positions.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
+      const coords = segment.map((p) => [p[1] - cx, p[3] * 1.5, p[2] - cy]);
+      const gtFlat = ribbonPositions(coords, 2.4);
       const gtGeo = new THREE.BufferGeometry();
-      gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(gtFlat, 3));
       scene.add(
-        new THREE.Line(
+        new THREE.Mesh(
           gtGeo,
-          new THREE.LineBasicMaterial({ color: GT_COLOR, transparent: true, opacity: 0.35 })
+          new THREE.MeshBasicMaterial({
+            color: GT_COLOR,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          })
         )
       );
+      const liveFlat = ribbonPositions(coords, 3.6);
       const liveGeo = new THREE.BufferGeometry();
-      liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(liveFlat, 3));
       liveGeo.setDrawRange(0, 0);
-      const liveLine = new THREE.Line(
+      const liveLine = new THREE.Mesh(
         liveGeo,
-        new THREE.LineBasicMaterial({ color: payload.color })
+        new THREE.MeshBasicMaterial({
+          color: payload.color,
+          side: THREE.DoubleSide,
+        })
       );
       scene.add(liveLine);
       return { points: segment, liveLine };
@@ -1310,7 +1342,7 @@ function initMap3D(traj3d) {
           if (p[0] > tNow) break;
           count += 1;
         }
-        run.liveLine.geometry.setDrawRange(0, count);
+        run.liveLine.geometry.setDrawRange(0, Math.max(0, count - 1) * 6);
       }
     }
   }
