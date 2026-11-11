@@ -1230,8 +1230,6 @@ function initMap3D(traj3d) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-  const grid = new THREE.GridHelper(900, 45, 0x8a8a85, 0x5c5c58);
-  scene.add(grid);
 
   let cx = 0;
   let cy = 0;
