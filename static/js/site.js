@@ -689,7 +689,7 @@ function initPlayback(traj, sequences, comm) {
     update(tStart);
     frameCampus();
   });
-  document.getElementById("mapFit")?.addEventListener("click", () => frameCampus());
+  document.getElementById("mapReset")?.addEventListener("click", () => frameCampus());
   document.getElementById("timeSlider").addEventListener("input", (e) => {
     const u = Number(e.target.value) / 1000;
     update(tStart + u * (tEnd - tStart));
@@ -1196,8 +1196,9 @@ function initMap3D(traj3d) {
   syncBg();
   window.addEventListener("neuroam-theme", syncBg);
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
-  camera.position.set(80, 70, 90);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 8000);
+  const home = new THREE.Vector3(80, 70, 90);
+  camera.position.copy(home);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   host.appendChild(renderer.domElement);
@@ -1222,6 +1223,30 @@ function initMap3D(traj3d) {
   }
   cx /= Math.max(n, 1);
   cy /= Math.max(n, 1);
+
+  let reach = 40;
+  for (const payload of Object.values(traj3d.payloads)) {
+    for (const p of payload.points) {
+      const x = p[1] - cx;
+      const y = p[3] * 1.5;
+      const z = p[2] - cy;
+      reach = Math.max(reach, Math.hypot(x, y, z));
+    }
+  }
+  home.set(reach * 0.85, reach * 0.62, reach * 1.05);
+  camera.position.copy(home);
+  camera.near = Math.max(0.5, reach / 500);
+  camera.far = reach * 8;
+  camera.updateProjectionMatrix();
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  function resetView() {
+    camera.position.copy(home);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
+  document.getElementById("map3dReset")?.addEventListener("click", resetView);
 
   const lineGroups = {};
   const markers = {};

@@ -120,12 +120,15 @@
             <div class="map-pane">
               <div class="map-pane-label">
                 <span>2D campus map</span>
-                <button type="button" id="mapFit">Fit</button>
+                <button type="button" id="mapReset">Reset</button>
               </div>
               <div id="map" role="img" aria-label="Campus map with robot trajectories"></div>
             </div>
             <div class="map-pane">
-              <div class="map-pane-label">3D height · ground truth</div>
+              <div class="map-pane-label">
+                <span>3D height · ground truth</span>
+                <button type="button" id="map3dReset">Reset</button>
+              </div>
               <div id="map3d" aria-label="3D trajectory height map"></div>
             </div>
           </div>
@@ -249,6 +252,6 @@
     }
   }
   </script>
-  <script type="module" src="static/js/site.js?v=20261111b"></script>
+  <script type="module" src="static/js/site.js?v=20261111c"></script>
 </body>
 </html>
