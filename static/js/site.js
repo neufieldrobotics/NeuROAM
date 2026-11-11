@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 
 const COLORS = {
   0: "#2a78d6",
@@ -1185,28 +1188,6 @@ async function initCloud() {
   }
 }
 
-function ribbonPositions(coords, halfWidth) {
-  const out = [];
-  for (let i = 0; i < coords.length - 1; i++) {
-    const a = coords[i];
-    const b = coords[i + 1];
-    let px = -(b[2] - a[2]);
-    let pz = b[0] - a[0];
-    const len = Math.hypot(px, pz) || 1;
-    px = (px / len) * halfWidth;
-    pz = (pz / len) * halfWidth;
-    out.push(
-      a[0] + px, a[1], a[2] + pz,
-      a[0] - px, a[1], a[2] - pz,
-      b[0] + px, b[1], b[2] + pz,
-      a[0] - px, a[1], a[2] - pz,
-      b[0] - px, b[1], b[2] - pz,
-      b[0] + px, b[1], b[2] + pz
-    );
-  }
-  return out;
-}
-
 function initMap3D(traj3d) {
   const host = document.getElementById("map3d");
   if (!host) return;
@@ -1268,6 +1249,22 @@ function initMap3D(traj3d) {
   }
   document.getElementById("map3dReset")?.addEventListener("click", resetView);
 
+  const lineMaterials = [];
+  function makeStroke(flat, color, width, opacity) {
+    const geo = new LineGeometry();
+    if (flat.length >= 6) geo.setPositions(flat);
+    const mat = new LineMaterial({
+      color,
+      linewidth: width,
+      transparent: opacity < 1,
+      opacity,
+      worldUnits: false,
+    });
+    mat.resolution.set(Math.max(host.clientWidth, 1), Math.max(host.clientHeight, 1));
+    lineMaterials.push(mat);
+    return new Line2(geo, mat);
+  }
+
   const lineGroups = {};
   const markers = {};
   for (const [pid, payload] of Object.entries(traj3d.payloads)) {
@@ -1285,33 +1282,12 @@ function initMap3D(traj3d) {
     if (run.length) runs.push(run);
 
     const liveLines = runs.map((segment) => {
-      const coords = segment.map((p) => [p[1] - cx, p[3] * 1.5, p[2] - cy]);
-      const gtFlat = ribbonPositions(coords, 0.85);
-      const gtGeo = new THREE.BufferGeometry();
-      gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(gtFlat, 3));
-      scene.add(
-        new THREE.Mesh(
-          gtGeo,
-          new THREE.MeshBasicMaterial({
-            color: GT_COLOR,
-            transparent: true,
-            opacity: 0.4,
-            side: THREE.DoubleSide,
-            depthWrite: false,
-          })
-        )
-      );
-      const liveFlat = ribbonPositions(coords, 1.15);
-      const liveGeo = new THREE.BufferGeometry();
-      liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(liveFlat, 3));
-      liveGeo.setDrawRange(0, 0);
-      const liveLine = new THREE.Mesh(
-        liveGeo,
-        new THREE.MeshBasicMaterial({
-          color: payload.color,
-          side: THREE.DoubleSide,
-        })
-      );
+      const flat = [];
+      for (const p of segment) flat.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
+      const gtLine = makeStroke(flat, GT_COLOR, 2, 0.55);
+      scene.add(gtLine);
+      const liveLine = makeStroke(flat, payload.color, 3.5, 1);
+      liveLine.geometry.instanceCount = 0;
       scene.add(liveLine);
       return { points: segment, liveLine };
     });
@@ -1340,7 +1316,7 @@ function initMap3D(traj3d) {
           if (p[0] > tNow) break;
           count += 1;
         }
-        run.liveLine.geometry.setDrawRange(0, Math.max(0, count - 1) * 6);
+        run.liveLine.geometry.instanceCount = Math.max(0, count - 1);
       }
     }
   }
@@ -1353,6 +1329,7 @@ function initMap3D(traj3d) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
+    for (const mat of lineMaterials) mat.resolution.set(w, h);
   }
   resize();
   window.addEventListener("resize", resize);
