@@ -480,6 +480,55 @@ function drawLinkGraph(comm, tNow) {
     </div>`;
 }
 
+function convexHull(points) {
+  const uniq = [];
+  const sorted = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  for (const p of sorted) {
+    const last = uniq[uniq.length - 1];
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) uniq.push(p);
+  }
+  if (uniq.length < 3) return uniq;
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const p of uniq) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+      lower.pop();
+    }
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = uniq.length - 1; i >= 0; i--) {
+    const p = uniq[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+      upper.pop();
+    }
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function campusRing(traj) {
+  const pts = [];
+  for (const payload of Object.values(traj.payloads)) {
+    for (const p of payload.points) pts.push([p[2], p[1]]);
+  }
+  const hull = convexHull(pts);
+  if (hull.length < 3) return null;
+  let cx = 0;
+  let cy = 0;
+  for (const p of hull) {
+    cx += p[0];
+    cy += p[1];
+  }
+  cx /= hull.length;
+  cy /= hull.length;
+  const ring = hull.map((p) => [cx + (p[0] - cx) * 1.08, cy + (p[1] - cy) * 1.08]);
+  ring.push(ring[0]);
+  return ring;
+}
+
 function splitTrail(points, tNow) {
   const segs = [];
   let cur = [];
@@ -514,6 +563,18 @@ function initPlayback(traj, sequences, comm) {
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
+  const campus = campusRing(traj);
+  const campusBounds = new maplibregl.LngLatBounds();
+  if (campus) {
+    for (const coord of campus) campusBounds.extend(coord);
+  }
+
+  function frameCampus() {
+    if (!campusBounds.isEmpty()) {
+      map.fitBounds(campusBounds, { padding: 42, duration: 0, maxZoom: 17 });
+    }
+  }
+
   const markers = {};
   const panels = document.getElementById("robotPanels");
   panels.innerHTML = "";
@@ -535,6 +596,32 @@ function initPlayback(traj, sequences, comm) {
   }
 
   function ensureLayers() {
+    if (campus && !map.getSource("campus")) {
+      const dark = document.documentElement.getAttribute("data-theme") === "dark";
+      map.addSource("campus", {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "Polygon", coordinates: [campus] } },
+      });
+      map.addLayer({
+        id: "campus-fill",
+        type: "fill",
+        source: "campus",
+        paint: {
+          "fill-color": dark ? "#d0d0ca" : "#7a7a74",
+          "fill-opacity": dark ? 0.14 : 0.18,
+        },
+      });
+      map.addLayer({
+        id: "campus-line",
+        type: "line",
+        source: "campus",
+        paint: {
+          "line-color": dark ? "#f2f2ec" : "#3c3c38",
+          "line-width": 2,
+          "line-opacity": 0.9,
+        },
+      });
+    }
     for (const [pid, payload] of Object.entries(traj.payloads)) {
       const gtId = `gt-${pid}`;
       const liveId = `trail-${pid}`;
@@ -598,7 +685,11 @@ function initPlayback(traj, sequences, comm) {
     window.dispatchEvent(new CustomEvent("neuroam-time", { detail: tNow }));
   }
 
-  map.on("load", () => update(tStart));
+  map.on("load", () => {
+    update(tStart);
+    frameCampus();
+  });
+  document.getElementById("mapFit")?.addEventListener("click", () => frameCampus());
   document.getElementById("timeSlider").addEventListener("input", (e) => {
     const u = Number(e.target.value) / 1000;
     update(tStart + u * (tEnd - tStart));

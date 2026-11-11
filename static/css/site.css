@@ -1508,11 +1508,25 @@ tr:last-child td {
 }
 
 .map-pane-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.45rem 0.7rem;
   border-bottom: 1px solid var(--rule);
   font-size: 0.8rem;
   color: var(--muted);
   letter-spacing: 0.02em;
+}
+
+.map-pane-label button {
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
 }
 
 #map,
