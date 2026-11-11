@@ -70,6 +70,7 @@ const ROBOT_MODELS = {
 };
 
 const GT_COLOR = "#9a9a94";
+const TRAIL_GAP_S = 60;
 
 async function loadJSON(path) {
   const res = await fetch(path);
@@ -347,6 +348,7 @@ function interpolatePose(points, t) {
   }
   const a = points[lo];
   const b = points[hi];
+  if (b[0] - a[0] > TRAIL_GAP_S) return a;
   const u = (t - a[0]) / Math.max(1e-6, b[0] - a[0]);
   return [t, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
 }
@@ -478,17 +480,21 @@ function drawLinkGraph(comm, tNow) {
     </div>`;
 }
 
-function fullTrailCoords(points) {
-  return points.map((p) => [p[2], p[1]]);
-}
-
-function liveTrailCoords(points, tNow) {
-  const coords = [];
+function splitTrail(points, tNow) {
+  const segs = [];
+  let cur = [];
+  let prevT = null;
   for (const p of points) {
-    if (p[0] > tNow) break;
-    coords.push([p[2], p[1]]);
+    if (tNow != null && p[0] > tNow) break;
+    if (prevT != null && p[0] - prevT > TRAIL_GAP_S) {
+      if (cur.length > 1) segs.push(cur);
+      cur = [];
+    }
+    cur.push([p[2], p[1]]);
+    prevT = p[0];
   }
-  return coords;
+  if (cur.length > 1) segs.push(cur);
+  return segs;
 }
 
 function initPlayback(traj, sequences, comm) {
@@ -537,7 +543,7 @@ function initPlayback(traj, sequences, comm) {
           type: "geojson",
           data: {
             type: "Feature",
-            geometry: { type: "LineString", coordinates: fullTrailCoords(payload.points) },
+            geometry: { type: "MultiLineString", coordinates: splitTrail(payload.points) },
           },
         });
         map.addLayer({
@@ -550,7 +556,7 @@ function initPlayback(traj, sequences, comm) {
       if (!map.getSource(liveId)) {
         map.addSource(liveId, {
           type: "geojson",
-          data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } },
+          data: { type: "Feature", geometry: { type: "MultiLineString", coordinates: [] } },
         });
         map.addLayer({
           id: liveId,
@@ -583,7 +589,7 @@ function initPlayback(traj, sequences, comm) {
         if (src) {
           src.setData({
             type: "Feature",
-            geometry: { type: "LineString", coordinates: liveTrailCoords(state.points, tNow) },
+            geometry: { type: "MultiLineString", coordinates: splitTrail(state.points, tNow) },
           });
         }
       }
@@ -1110,7 +1116,7 @@ function initMap3D(traj3d) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-  const grid = new THREE.GridHelper(200, 40, 0x888888, 0x444444);
+  const grid = new THREE.GridHelper(900, 45, 0x8a8a85, 0x5c5c58);
   scene.add(grid);
 
   let cx = 0;
@@ -1129,28 +1135,42 @@ function initMap3D(traj3d) {
   const lineGroups = {};
   const markers = {};
   for (const [pid, payload] of Object.entries(traj3d.payloads)) {
-    const positions = [];
+    const runs = [];
+    let run = [];
+    let prevT = null;
     for (const p of payload.points) {
-      positions.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
+      if (prevT != null && p[0] - prevT > TRAIL_GAP_S && run.length) {
+        runs.push(run);
+        run = [];
+      }
+      run.push(p);
+      prevT = p[0];
     }
-    const gtGeo = new THREE.BufferGeometry();
-    gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    const gtLine = new THREE.Line(
-      gtGeo,
-      new THREE.LineBasicMaterial({ color: GT_COLOR, transparent: true, opacity: 0.35 })
-    );
-    scene.add(gtLine);
+    if (run.length) runs.push(run);
 
-    const liveGeo = new THREE.BufferGeometry();
-    liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    liveGeo.setDrawRange(0, 2);
-    const liveLine = new THREE.Line(
-      liveGeo,
-      new THREE.LineBasicMaterial({ color: payload.color })
-    );
-    scene.add(liveLine);
+    const liveLines = runs.map((segment) => {
+      const positions = [];
+      for (const p of segment) positions.push(p[1] - cx, p[3] * 1.5, p[2] - cy);
+      const gtGeo = new THREE.BufferGeometry();
+      gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      scene.add(
+        new THREE.Line(
+          gtGeo,
+          new THREE.LineBasicMaterial({ color: GT_COLOR, transparent: true, opacity: 0.35 })
+        )
+      );
+      const liveGeo = new THREE.BufferGeometry();
+      liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      liveGeo.setDrawRange(0, 0);
+      const liveLine = new THREE.Line(
+        liveGeo,
+        new THREE.LineBasicMaterial({ color: payload.color })
+      );
+      scene.add(liveLine);
+      return { points: segment, liveLine };
+    });
 
-    lineGroups[pid] = { points: payload.points, liveLine };
+    lineGroups[pid] = { points: payload.points, liveLines };
     const m = new THREE.Mesh(
       new THREE.SphereGeometry(1.2, 16, 16),
       new THREE.MeshStandardMaterial({ color: payload.color })
@@ -1168,12 +1188,14 @@ function initMap3D(traj3d) {
       }
       markers[pid].visible = true;
       markers[pid].position.set(pose[1] - cx, pose[3] * 1.5, pose[2] - cy);
-      let count = 0;
-      for (const p of state.points) {
-        if (p[0] > tNow) break;
-        count += 1;
+      for (const run of state.liveLines) {
+        let count = 0;
+        for (const p of run.points) {
+          if (p[0] > tNow) break;
+          count += 1;
+        }
+        run.liveLine.geometry.setDrawRange(0, count);
       }
-      state.liveLine.geometry.setDrawRange(0, Math.max(count, 2));
     }
   }
 
