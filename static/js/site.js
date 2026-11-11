@@ -1288,7 +1288,7 @@ function initMap3D(traj3d) {
 
     const liveLines = runs.map((segment) => {
       const coords = segment.map((p) => [p[1] - cx, p[3] * 1.5, p[2] - cy]);
-      const gtFlat = ribbonPositions(coords, 2.4);
+      const gtFlat = ribbonPositions(coords, 0.85);
       const gtGeo = new THREE.BufferGeometry();
       gtGeo.setAttribute("position", new THREE.Float32BufferAttribute(gtFlat, 3));
       scene.add(
@@ -1303,7 +1303,7 @@ function initMap3D(traj3d) {
           })
         )
       );
-      const liveFlat = ribbonPositions(coords, 3.6);
+      const liveFlat = ribbonPositions(coords, 1.15);
       const liveGeo = new THREE.BufferGeometry();
       liveGeo.setAttribute("position", new THREE.Float32BufferAttribute(liveFlat, 3));
       liveGeo.setDrawRange(0, 0);
